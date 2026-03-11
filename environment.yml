@@ -2,7 +2,7 @@ name: dcrl
 channels:
   - conda-forge
 dependencies:
-  - python=3.11
+  - python=3.12.3
   - numpy
   - scipy
   - pandas
@@ -11,4 +11,12 @@ dependencies:
   - networkx
   - pyyaml
   - pytest
+  - joblib
+  - filelock
+  - pydot
+  - graphviz
+  - tqdm
   - pip
+  - pip:
+      - factor_analyzer
+      - causal-learn
