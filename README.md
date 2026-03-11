@@ -1,9 +1,7 @@
 # Discrete Causal Representation Learning
 
-Code for the paper **Discrete Causal Representation Learning**  
-Wenjin Zhang, Yixin Wang, and Yuqi Gu
+Code for the paper **Discrete Causal Representation Learning**: [PDF](https://yuqigu.github.io/assets/pdf/DCRL_Mar07_2026.pdf)
 
-**Manuscript:** [PDF](https://yuqigu.github.io/assets/pdf/DCRL_Mar07_2026.pdf)
 
 ## File map
 
