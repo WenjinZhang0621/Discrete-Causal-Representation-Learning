@@ -65,33 +65,6 @@ def psaem_seesaw(
     L_final: float = 0.0,
     verbose: bool = True,
 ):
-    """
-    Bernoulli PSAEM for the seesaw pooled-mask data.
-
-    Parameters
-    ----------
-    X : np.ndarray
-        Binary matrix of shape (N, J).
-    K : int
-        Number of latent variables.
-    C : int
-        Number of SAEM latent draws per outer iteration.
-    tol, max_iter, pen, tau, epsilon, kappa, L_final : float/int
-        Algorithm parameters.
-
-    Returns
-    -------
-    p_hat : np.ndarray
-        Shape (2^K, 1).
-    B_hat : np.ndarray
-        Shape (J, K+1).
-    A_hat : np.ndarray
-        Initial latent estimate from initialization.
-    t : int
-        Number of outer iterations completed.
-    loglik : float
-        Placeholder currently kept for compatibility.
-    """
     X = X.astype(float)
     N, J = X.shape
 
