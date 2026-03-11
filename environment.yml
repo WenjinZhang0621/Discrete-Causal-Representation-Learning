@@ -16,6 +16,7 @@ dependencies:
   - pydot
   - graphviz
   - tqdm
+  - pillow
   - pip
   - pip:
       - factor_analyzer
