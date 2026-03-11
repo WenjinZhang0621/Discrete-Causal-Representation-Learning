@@ -1,0 +1,14 @@
+name: dcrl
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy
+  - scipy
+  - pandas
+  - matplotlib
+  - scikit-learn
+  - networkx
+  - pyyaml
+  - pytest
+  - pip
