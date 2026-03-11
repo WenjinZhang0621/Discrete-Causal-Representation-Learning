@@ -5,7 +5,7 @@ from scipy.special import expit
 
 from .data_generator import GenerateData
 from .evaluation import compute_shd_triplet
-from .initialization import initialize_parameter
+from .initialization import initialize_parameters
 from .utils import binary, TLP, thres, initialize_function
 
 
