@@ -9,7 +9,7 @@ if str(SRC) not in sys.path:
 
 from dcrl.config import ExperimentConfig
 from dcrl.runner import ParallelDAGEstimator
-from truth_graphs import build_truth_graph
+from truth_graph import build_truth_graph
 
 
 def parse_args():
