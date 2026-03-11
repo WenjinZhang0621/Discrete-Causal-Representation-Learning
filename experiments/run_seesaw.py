@@ -123,7 +123,6 @@ def main():
 
     np.save(os.path.join(args.results_dir, "p_hat.npy"), p_hat)
     np.save(os.path.join(args.results_dir, "B_hat.npy"), B_hat)
-    np.save(os.path.join(args.results_dir, "A_hat_init.npy"), A_hat)
 
     save_effect_heatmaps(
         B_hat,
