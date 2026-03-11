@@ -22,7 +22,7 @@ python experiments/run_parallel.py --start 1 --end 11 --n 4000 --k 10 --dag_type
 For the seesaw Bernoulli experiment,
 
 ```bash
-python experiments/run_seesaw.py --N 10000 --K 4 --seed 0 --bank_size 2000 --jitter 0.001 --noisy_z3 --p_up_if11 0.8 --p_up_else 0.2 --p_ball4_if_up 0.99 --p_ball4_if_down 0 
+python experiments/run_seesaw.py --N 10000 --K 4 --seed 123 --bank_size 2000 --jitter 0.001 --noisy_z3 --p_up_if11 0.8 --p_up_else 0.2 --p_ball4_if_up 0.99 --p_ball4_if_down 0 
 ```
 
 ## Output
