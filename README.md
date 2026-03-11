@@ -11,25 +11,11 @@ conda env create -f environment.yml
 conda activate dcrl
 ```
 
-Or install dependencies with
-
-```bash
-pip install -r requirements.txt
-```
-
 ## Run
 
 ```bash
 python experiments/run_parallel.py --start 1 --end 11 --n 4000 --k 10 --dag_type Tree --distribution Lognormal
 ```
-
-Note that the script runs iterations in `range(start, end)`, so the right endpoint is excluded. For example,
-
-```bash
-python experiments/run_parallel.py --start 1 --end 2 --n 4000 --k 10 --dag_type Tree --distribution Lognormal
-```
-
-runs exactly one iteration.
 
 ## Output
 
