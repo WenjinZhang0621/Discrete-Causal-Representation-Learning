@@ -6,27 +6,6 @@ from dcrl.utils import binary, thres
 
 
 def init_seesaw(K: int, X: np.ndarray, epsilon: float = 1e-5):
-    """
-    Robust Bernoulli initialization for the seesaw pooled mask matrix X.
-
-    Parameters
-    ----------
-    K : int
-        Number of latent variables.
-    X : np.ndarray
-        Binary observed matrix of shape (N, J).
-    epsilon : float
-        Clipping constant for stable logit transform.
-
-    Returns
-    -------
-    p_init : np.ndarray
-        Shape (2^K, 1).
-    B_init : np.ndarray
-        Shape (J, K+1), including intercept column.
-    A_init : np.ndarray
-        Shape (N, K).
-    """
     X = X.astype(np.float64)
     N, J = X.shape
 
