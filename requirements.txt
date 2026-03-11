@@ -13,3 +13,4 @@ graphviz
 pydot
 tqdm
 causal-learn
+Pillow
