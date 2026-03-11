@@ -72,9 +72,9 @@ def main():
     np.random.seed(args.seed)
 
     if args.pen is None:
-        args.pen = args.N ** (2 / 8)
+        args.pen = args.N ** (1 / 4)
     if args.tau is None:
-        args.tau = args.N ** (-14 / 64)
+        args.tau = args.N ** (-7 / 32)
 
     os.makedirs(args.results_dir, exist_ok=True)
 
