@@ -14,7 +14,6 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from dcrl.utils import binary
-from dcrl.evaluation import shd_cpdag
 from dcrl.seesaw.dataset import make_dataset
 from dcrl.seesaw.psaem import psaem_seesaw
 from dcrl.seesaw.plotting import save_effect_heatmaps, save_probability_heatmaps
@@ -22,11 +21,13 @@ from dcrl.seesaw.plotting import save_effect_heatmaps, save_probability_heatmaps
 
 def sample_latents_from_p(p_hat: np.ndarray, N: int, K: int) -> np.ndarray:
     sam = np.zeros((N, K), dtype=np.uint8)
-    qwe = p_hat.flatten()
+    qwe = p_hat.flatten().astype(float)
     qwe = qwe / qwe.sum()
+
     counts = np.random.multinomial(N, qwe)
     n = 0
     A_src = binary(np.arange(2**K), K)
+
     for a in range(2**K):
         cnt = int(counts[a])
         if cnt > 0:
@@ -37,6 +38,7 @@ def sample_latents_from_p(p_hat: np.ndarray, N: int, K: int) -> np.ndarray:
 
 def main():
     parser = argparse.ArgumentParser()
+
     parser.add_argument("--N", type=int, default=10000)
     parser.add_argument("--K", type=int, default=4)
     parser.add_argument("--orig_hw", type=int, default=256)
@@ -46,12 +48,14 @@ def main():
     parser.add_argument("--bank_size", type=int, default=2000)
     parser.add_argument("--jitter", type=float, default=0.001)
     parser.add_argument("--ball_thresh", type=int, default=80)
+
     parser.add_argument("--noisy_z3", action="store_true")
     parser.add_argument("--p_up_if11", type=float, default=0.8)
     parser.add_argument("--p_up_else", type=float, default=0.2)
     parser.add_argument("--p_ball4_if_up", type=float, default=0.99)
     parser.add_argument("--p_ball4_if_down", type=float, default=0.0)
     parser.add_argument("--pooling", type=str, default="min", choices=["min", "max"])
+
     parser.add_argument("--C", type=int, default=1)
     parser.add_argument("--tol", type=float, default=0.5)
     parser.add_argument("--max_iter", type=int, default=20)
@@ -60,7 +64,9 @@ def main():
     parser.add_argument("--L_final", type=float, default=0.0)
     parser.add_argument("--pen", type=float, default=None)
     parser.add_argument("--tau", type=float, default=None)
+
     parser.add_argument("--results_dir", type=str, default="results/seesaw")
+
     args = parser.parse_args()
 
     np.random.seed(args.seed)
@@ -119,35 +125,44 @@ def main():
     np.save(os.path.join(args.results_dir, "B_hat.npy"), B_hat)
     np.save(os.path.join(args.results_dir, "A_hat_init.npy"), A_hat)
 
-    save_effect_heatmaps(B_hat, output_dir=os.path.join(args.results_dir, "heatmaps"), grid_hw=args.pool_hw)
-    save_probability_heatmaps(B_hat, output_dir=os.path.join(args.results_dir, "probability_maps"), grid_hw=args.pool_hw)
+    save_effect_heatmaps(
+        B_hat,
+        output_dir=os.path.join(args.results_dir, "heatmaps"),
+        grid_hw=args.pool_hw,
+    )
+    save_probability_heatmaps(
+        B_hat,
+        output_dir=os.path.join(args.results_dir, "probability_maps"),
+        grid_hw=args.pool_hw,
+    )
 
     sam = sample_latents_from_p(p_hat, N=args.N, K=args.K)
+    np.save(os.path.join(args.results_dir, "latent_samples_from_phat.npy"), sam)
+
     record_est = ges(sam, score_func="local_score_BDeu")
+    G_hat = record_est["G"].graph
+    np.save(os.path.join(args.results_dir, "latent_graph_estimated.npy"), G_hat)
+
     pyd_est = GraphUtils.to_pydot(record_est["G"])
     pyd_est.write_png(os.path.join(args.results_dir, "latent_graph_estimated.png"))
-
-    record_true = ges(Z, score_func="local_score_BDeu")
-    pyd_true = GraphUtils.to_pydot(record_true["G"])
-    pyd_true.write_png(os.path.join(args.results_dir, "latent_graph_true_sample.png"))
-
-    shd_val = shd_cpdag(record_true["G"].graph, record_est["G"].graph)
 
     summary = {
         "N": args.N,
         "K": args.K,
         "J": int(Y.shape[1]),
-        "iterations": t,
+        "iterations": int(t),
         "loglik": float(loglik),
-        "shd_latent_graph": int(shd_val),
         "dataset_path": dataset_path,
+        "results_dir": args.results_dir,
     }
     with open(os.path.join(args.results_dir, "summary.json"), "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)
 
     print("Saved dataset to:", dataset_path)
-    print("Saved outputs to:", args.results_dir)
-    print("Latent-graph SHD:", shd_val)
+    print("Saved p_hat to:", os.path.join(args.results_dir, "p_hat.npy"))
+    print("Saved B_hat to:", os.path.join(args.results_dir, "B_hat.npy"))
+    print("Saved estimated graph to:", os.path.join(args.results_dir, "latent_graph_estimated.png"))
+    print("Saved summary to:", os.path.join(args.results_dir, "summary.json"))
 
 
 if __name__ == "__main__":
