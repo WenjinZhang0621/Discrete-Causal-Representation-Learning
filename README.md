@@ -29,7 +29,7 @@ python experiments/run_seesaw.py --N 10000 --K 4 --orig_hw 256 --mask_hw 96 --po
 
 Main simulation results are written automatically to `results/`, for example `"results/results_4000_Lognormal_Tree_2.txt"` with columns `"iter,shd_val,shd2_val,shd3_val"`.
 
-The seesaw script writes outputs to `"results/seesaw/"`, including `"p_hat.npy"`, `"B_hat.npy"`, `"A_hat_init.npy"`, `"latent_graph_estimated.png"`, `"latent_graph_estimated.npy"`, `"summary.json"`, and heatmaps under `"results/seesaw/heatmaps/"` and `"results/seesaw/probability_maps/"`.
+The seesaw script writes outputs to `"results/seesaw/"`, including `"p_hat.npy"`, `"B_hat.npy"`, `"latent_graph_estimated.png"`, `"latent_graph_estimated.npy"`, `"summary.json"`, and heatmaps under `"results/seesaw/heatmaps/"`.
 
 ## File map
 
