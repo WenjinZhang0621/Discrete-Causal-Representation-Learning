@@ -1,6 +1,6 @@
 # Discrete Causal Representation Learning
 
-This repository contains a refactored version of the simulation / estimation code for **Discrete Causal Representation Learning**.
+This repository contains the code for **Discrete Causal Representation Learning**.
 
 ## File map
 
