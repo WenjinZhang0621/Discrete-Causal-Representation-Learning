@@ -274,7 +274,7 @@ class DAGEstimator(GenerateData):
                     Xj = self.X[:, j].copy()
                     f_loglik = self.F_1_SAEM(Xj, A_sample_long)
 
-                    def update_f_old_1(x, f_old=f_old_1[j], f_new=f_loglik):
+                    def update_f_old_1(x, f_old=f_old_1[j], f_new=f_loglik, step=step):
                         return (1 - step) * f_old(x) + step * f_new(x)
 
                     f_old_1[j] = update_f_old_1
@@ -363,7 +363,7 @@ class DAGEstimator(GenerateData):
                     Xj = self.X[:, j]
                     f_loglik = self.F_1_SAEM(Xj, A_sample_long)
 
-                    def update_f_old_1(x, f_old=f_old_1[j], f_new=f_loglik):
+                    def update_f_old_1(x, f_old=f_old_1[j], f_new=f_loglik, step=step):
                         return (1 - step) * f_old(x) + step * f_new(x)
 
                     f_old_1[j] = update_f_old_1
@@ -462,7 +462,7 @@ class DAGEstimator(GenerateData):
                     Xj = self.X[:, j].copy()
                     f_loglik = self.F_1_SAEM(Xj, A_sample_long)
 
-                    def update_f_old_1(x, f_old=f_old_1[j], f_new=f_loglik):
+                    def update_f_old_1(x, f_old=f_old_1[j], f_new=f_loglik, step=step):
                         return (1 - step) * f_old(x) + step * f_new(x)
 
                     f_old_1[j] = update_f_old_1
