@@ -57,7 +57,7 @@ def main():
     parser.add_argument("--pooling", type=str, default="min", choices=["min", "max"])
 
     parser.add_argument("--C", type=int, default=1)
-    parser.add_argument("--tol", type=float, default=0.5)
+    parser.add_argument("--tol", type=float, default=0.1)
     parser.add_argument("--max_iter", type=int, default=20)
     parser.add_argument("--epsilon", type=float, default=1e-5)
     parser.add_argument("--kappa", type=float, default=0.1)
