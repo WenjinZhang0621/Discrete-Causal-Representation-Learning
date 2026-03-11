@@ -127,7 +127,8 @@ def main():
         output_dir=os.path.join(args.results_dir, "heatmaps"),
         grid_hw=args.pool_hw,
     )
-
+    
+    np.random.seed(args.seed)
     sam = sample_latents_from_p(p_hat, N=args.N, K=args.K)
     np.save(os.path.join(args.results_dir, "latent_samples_from_phat.npy"), sam)
 
