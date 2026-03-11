@@ -5,7 +5,7 @@ from scipy.special import expit
 
 from .data_generator import GenerateData
 from .evaluation import compute_shd_triplet
-from .initialization import initialize_parameters
+from .initialization import initialize_parameter
 from .utils import binary, TLP, thres, initialize_function
 
 
@@ -493,24 +493,18 @@ class DAGEstimator(GenerateData):
         if self.distribution == "Poisson":
             if self.algorithm == "PSAEM":
                 self.p_hat, self.B_hat, self.A_hat, _, _ = self.PSAEM(ite)
-            elif self.algorithm == "PEM":
-                self.p_hat, self.B_hat, _, _ = self.PEM(ite)
             else:
                 raise ValueError(f"Unknown algorithm: {self.algorithm}")
 
         elif self.distribution == "Lognormal":
             if self.algorithm == "PSAEM":
                 self.p_hat, self.B_hat, self.gamma_hat, self.A_hat, _, _ = self.PSAEM(ite)
-            elif self.algorithm == "PEM":
-                self.p_hat, self.B_hat, self.gamma_hat, _, _ = self.PEM(ite)
             else:
                 raise ValueError(f"Unknown algorithm: {self.algorithm}")
 
         elif self.distribution == "Bernoulli":
             if self.algorithm == "PSAEM":
                 self.p_hat, self.B_hat, self.A_hat, _, _ = self.PSAEM(ite)
-            elif self.algorithm == "PEM":
-                self.p_hat, self.B_hat, _, _ = self.PEM(ite)
             else:
                 raise ValueError(f"Unknown algorithm: {self.algorithm}")
         else:
