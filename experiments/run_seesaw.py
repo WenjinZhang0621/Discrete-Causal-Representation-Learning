@@ -16,7 +16,7 @@ if str(SRC) not in sys.path:
 from dcrl.utils import binary
 from dcrl.seesaw.dataset import make_dataset
 from dcrl.seesaw.psaem import psaem_seesaw
-from dcrl.seesaw.plotting import save_effect_heatmaps, save_probability_heatmaps
+from dcrl.seesaw.plotting import save_effect_heatmaps
 
 
 def sample_latents_from_p(p_hat: np.ndarray, N: int, K: int) -> np.ndarray:
@@ -128,11 +128,6 @@ def main():
     save_effect_heatmaps(
         B_hat,
         output_dir=os.path.join(args.results_dir, "heatmaps"),
-        grid_hw=args.pool_hw,
-    )
-    save_probability_heatmaps(
-        B_hat,
-        output_dir=os.path.join(args.results_dir, "probability_maps"),
         grid_hw=args.pool_hw,
     )
 
