@@ -21,9 +21,7 @@ from dcrl.seesaw.plotting import save_effect_heatmaps
 
 def sample_latents_from_p(p_hat: np.ndarray, N: int, K: int) -> np.ndarray:
     sam = np.zeros((N, K), dtype=np.uint8)
-    qwe = p_hat.flatten().astype(float)
-    qwe = qwe / qwe.sum()
-
+    qwe = p_hat.flatten()
     counts = np.random.multinomial(N, qwe)
     n = 0
     A_src = binary(np.arange(2**K), K)
@@ -31,7 +29,7 @@ def sample_latents_from_p(p_hat: np.ndarray, N: int, K: int) -> np.ndarray:
     for a in range(2**K):
         cnt = int(counts[a])
         if cnt > 0:
-            sam[n : n + cnt, :K] = np.tile(A_src[a, :K], (cnt, 1))
+            sam[n:n+cnt, :K] = np.tile(A_src[a, :K], (cnt, 1))
             n += cnt
     return sam
 
