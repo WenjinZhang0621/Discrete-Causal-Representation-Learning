@@ -6,3 +6,10 @@ scikit-learn
 networkx
 pyyaml
 pytest
+joblib
+filelock
+factor_analyzer
+graphviz
+pydot
+tqdm
+causal-learn
