@@ -13,13 +13,23 @@ conda activate dcrl
 
 ## Run
 
+For the main simulation pipeline,
+
 ```bash
 python experiments/run_parallel.py --start 1 --end 11 --n 4000 --k 10 --dag_type Tree --distribution Lognormal
 ```
 
+For the seesaw Bernoulli experiment,
+
+```bash
+python experiments/run_seesaw.py --N 10000 --K 4 --orig_hw 256 --mask_hw 96 --pool_hw 16 --seed 123 --bank_size 2000 --jitter 0.001 --ball_thresh 80 --noisy_z3 --p_up_if11 0.8 --p_up_else 0.2 --p_ball4_if_up 0.99 --p_ball4_if_down 0 --pooling min
+```
+
 ## Output
 
-Results are written automatically to `results/`, for example `"results/results_4000_Lognormal_Tree_2.txt"` with columns `"iter,shd_val,shd2_val,shd3_val"`.
+Main simulation results are written automatically to `results/`, for example `"results/results_4000_Lognormal_Tree_2.txt"` with columns `"iter,shd_val,shd2_val,shd3_val"`.
+
+The seesaw script writes outputs to `"results/seesaw/"`, including `"p_hat.npy"`, `"B_hat.npy"`, `"A_hat_init.npy"`, `"latent_graph_estimated.png"`, `"latent_graph_estimated.npy"`, `"summary.json"`, and heatmaps under `"results/seesaw/heatmaps/"` and `"results/seesaw/probability_maps/"`.
 
 ## File map
 
@@ -40,11 +50,21 @@ Results are written automatically to `results/`, for example `"results/results_4
   - resampling from estimated `p_hat` and evaluating recovered graphs
 - `src/dcrl/estimator.py`
   - `DAGEstimator`
-  - `PEM`, `PSAEM`, and the main `estimate` method
+  - `PSAEM` and the main `estimate` method
 - `src/dcrl/runner.py`
   - `ParallelDAGEstimator`
   - parallel streaming experiment runner with file locking
+- `src/dcrl/seesaw/dataset.py`
+  - seesaw image generation, masks, pooled observations, and latent variables
+- `src/dcrl/seesaw/init.py`
+  - custom initialization for the seesaw Bernoulli setting
+- `src/dcrl/seesaw/psaem.py`
+  - Bernoulli PSAEM for the seesaw experiment
+- `src/dcrl/seesaw/plotting.py`
+  - heatmap visualization for the estimated coefficient matrix `\hat B`
 - `experiments/truth_graph.py`
   - builds truth graphs for each named DAG family
 - `experiments/run_parallel.py`
-  - the executable CLI script
+  - the executable CLI script for the main simulation pipeline
+- `experiments/run_seesaw.py`
+  - the executable CLI script for the seesaw Bernoulli experiment
