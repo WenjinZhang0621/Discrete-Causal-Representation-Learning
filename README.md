@@ -82,9 +82,6 @@ The TIMSS script writes outputs to `results/timss/`, including `p_hat.npy`, `B_h
 * `src/dcrl/seesaw/plotting.py`
 
   * heatmap visualization for the estimated coefficient matrix `\\hat B`
-* `src/dcrl/timss/init.py`
-
-  * custom initialization for the TIMSS lognormal setting with missing data
 * `src/dcrl/timss/em.py`
 
   * lognormal EM algorithm with missing data for the TIMSS experiment
