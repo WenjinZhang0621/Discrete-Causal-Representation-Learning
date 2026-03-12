@@ -44,7 +44,7 @@ def main():
     parser.add_argument("--K", type=int, default=7)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--max_iter", type=int, default=100)
-    parser.add_argument("--tol", type=float, default=0.9)
+    parser.add_argument("--tol", type=float, default=0.1)
     parser.add_argument("--results_dir", type=str, default="results/timss")
     args = parser.parse_args()
 
