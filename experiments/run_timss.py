@@ -15,7 +15,6 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from dcrl.utils import binary
-from dcrl.timss.init import init1_missing
 from dcrl.timss.em import get_EM_ACDM_with_missing
 
 
@@ -55,8 +54,18 @@ def main():
     Q = pd.read_csv(args.q_path, header=None).values.astype(int)
 
     N = X.shape[0]
+    J = X.shape[1]
+    K = args.K
 
-    nu_in, beta_in, gamma_in, A_e = init1_missing(X, args.K, Q)
+    nu_in = np.random.rand(2**K, 1)
+    nu_in = nu_in / np.sum(nu_in)
+
+    gamma_in = 0.4 * np.ones((J, 1))
+    beta_in = np.hstack([
+        2 * np.ones((J, 1)) + np.random.rand(J, 1),
+        Q * (np.random.rand(J, K) + 0.5)
+    ])
+
     p_hat, B_hat, gamma_hat, loglik, itera = get_EM_ACDM_with_missing(
         X, Q, nu_in, beta_in, gamma_in, max_iter=args.max_iter, tol=args.tol
     )
@@ -66,21 +75,21 @@ def main():
     np.save(os.path.join(args.results_dir, "gamma_hat.npy"), gamma_hat)
 
     np.random.seed(args.seed)
-    sam = sample_latents_from_p(p_hat, N=N, K=args.K)
+    sam = sample_latents_from_p(p_hat, N=N, K=K)
     np.save(os.path.join(args.results_dir, "latent_samples_from_phat.npy"), sam)
 
     record_est = ges(sam, score_func="local_score_BDeu")
     G_hat = record_est["G"].graph
     np.save(os.path.join(args.results_dir, "latent_graph_estimated.npy"), G_hat)
 
-    labels = [f"Z{i+1}" for i in range(args.K)]
+    labels = [f"Z{i+1}" for i in range(K)]
     pyd_est = GraphUtils.to_pydot(record_est["G"], labels=labels)
     pyd_est.write_png(os.path.join(args.results_dir, "latent_graph_estimated.png"))
 
     summary = {
         "N": int(N),
-        "K": int(args.K),
-        "J": int(X.shape[1]),
+        "K": int(K),
+        "J": int(J),
         "iterations": int(itera),
         "loglik": float(loglik),
         "results_dir": args.results_dir,
