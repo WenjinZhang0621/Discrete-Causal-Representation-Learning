@@ -51,7 +51,6 @@ def main():
     np.random.seed(args.seed)
     os.makedirs(args.results_dir, exist_ok=True)
 
-    # ----- load and preprocess TIMSS observed data -----
     df = pd.read_csv(args.x_path, header=None)
     matrix1 = df.to_numpy(dtype=float)
 
@@ -62,7 +61,6 @@ def main():
     upper_limit = np.e**6
     X = np.clip(matrix1_cleaned, lower_limit, upper_limit).astype(float)
 
-    # ----- load Q and drop the first index column -----
     Q_df = pd.read_csv(args.q_path, header=None)
     Q = Q_df.iloc[:, 1:].to_numpy().astype(int)
 
@@ -75,7 +73,6 @@ def main():
     if Q.shape[0] != J:
         raise ValueError(f"X has {J} columns, but Q has {Q.shape[0]} rows")
 
-    # ----- random initialization -----
     nu_in = np.random.rand(2**K, 1)
     nu_in = nu_in / np.sum(nu_in)
 
