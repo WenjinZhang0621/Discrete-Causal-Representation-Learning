@@ -82,7 +82,6 @@ def main():
         Q * (np.random.rand(J, K) + 0.5)
     ])
 
-    # ----- EM estimation -----
     p_hat, B_hat, gamma_hat, loglik, itera = get_EM_ACDM_with_missing(
         X, Q, nu_in, beta_in, gamma_in, max_iter=args.max_iter, tol=args.tol
     )
@@ -91,7 +90,6 @@ def main():
     np.save(os.path.join(args.results_dir, "B_hat.npy"), B_hat)
     np.save(os.path.join(args.results_dir, "gamma_hat.npy"), gamma_hat)
 
-    # ----- latent resampling and GES -----
     np.random.seed(args.seed)
     sam = sample_latents_from_p(p_hat, N=N, K=K)
     np.save(os.path.join(args.results_dir, "latent_samples_from_phat.npy"), sam)
