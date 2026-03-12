@@ -51,11 +51,15 @@ def main():
     os.makedirs(args.results_dir, exist_ok=True)
 
     X = pd.read_csv(args.x_path, header=None).values.astype(float)
-    Q = pd.read_csv(args.q_path, header=None).values.astype(int)
 
-    N = X.shape[0]
-    J = X.shape[1]
-    K = args.K
+    Q_df = pd.read_csv(args.q_path, header=None)
+    Q = Q_df.iloc[:, 1:].values.astype(int)
+
+    N, J = X.shape
+    K = Q.shape[1]
+
+    if Q.shape[0] != J:
+        raise ValueError(f"X has {J} columns, but Q has {Q.shape[0]} rows")
 
     nu_in = np.random.rand(2**K, 1)
     nu_in = nu_in / np.sum(nu_in)
@@ -65,7 +69,6 @@ def main():
         2 * np.ones((J, 1)) + np.random.rand(J, 1),
         Q * (np.random.rand(J, K) + 0.5)
     ])
-
     p_hat, B_hat, gamma_hat, loglik, itera = get_EM_ACDM_with_missing(
         X, Q, nu_in, beta_in, gamma_in, max_iter=args.max_iter, tol=args.tol
     )
