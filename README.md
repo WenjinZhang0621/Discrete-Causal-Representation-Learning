@@ -28,7 +28,7 @@ python experiments/run_seesaw.py --N 10000 --K 4 --seed 123 --bank_size 2000 --j
 For the TIMSS experiment,
 
 ```bash
-python experiments/run_timss.py --x_path data/TIMSS/time.csv --q_path data/TIMSS/Q.csv --K 7 --seed 1 --max_iter 100 --tol 0.9
+python experiments/run_timss.py --x_path data/TIMSS/time.csv --q_path data/TIMSS/Q.csv --K 7 --max_iter 100 --tol 0.9
 ```
 
 ## Output
