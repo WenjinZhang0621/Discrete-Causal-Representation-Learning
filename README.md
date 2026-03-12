@@ -1,4 +1,4 @@
-"# Discrete Causal Representation Learning
+# Discrete Causal Representation Learning
 
 Code for the paper **Discrete Causal Representation Learning**: [PDF](https://yuqigu.github.io/assets/pdf/DCRL_Mar07_2026.pdf)
 
@@ -19,7 +19,7 @@ For the main simulation pipeline,
 python experiments/run_parallel.py --start 1 --end 11 --n 4000 --k 10 --dag_type Tree --distribution Lognormal
 ```
 
-For the seesaw Bernoulli experiment,
+For the seesaw experiment,
 
 ```bash
 python experiments/run_seesaw.py --N 10000 --K 4 --seed 123 --bank_size 2000 --jitter 0.001 --noisy_z3 --p_up_if11 0.8 --p_up_else 0.2 --p_ball4_if_up 0.99 --p_ball4_if_down 0
@@ -105,4 +105,4 @@ The TIMSS script writes outputs to `results/timss/`, including `p_hat.npy`, `B_h
   * Q-matrix for the TIMSS experiment
 * `data/TIMSS/time.csv`
 
-  * observed TIMSS data matrix used by `run_timss.py`"
+  * observed TIMSS data matrix used by `run_timss.py`
