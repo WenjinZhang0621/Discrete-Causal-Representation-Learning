@@ -27,15 +27,17 @@ def save_effect_heatmaps(
         )
 
     heatmaps = []
-    for k in range(K1):
+    labels = []
+    for k in range(1, K1):
         lv = np.zeros(K1, dtype=float)
         lv[k] = 1.0
         heatmaps.append(expit(B_hat @ lv))
+        labels.append(k)
 
     vals = np.concatenate(heatmaps)
     vmin, vmax = float(vals.min()), float(vals.max())
 
-    for k, hm in enumerate(heatmaps):
+    for k, hm in zip(labels, heatmaps):
         plt.figure(figsize=(4, 4))
         plt.imshow(
             hm.reshape(grid_hw, grid_hw),
@@ -45,15 +47,7 @@ def save_effect_heatmaps(
             interpolation="nearest",
         )
         plt.colorbar()
-
-        if k == 0:
-            title = "Intercept"
-            fname = "intercept.png"
-        else:
-            title = f"Effect of Z{k}"
-            fname = f"{prefix}_Z{k}.png"
-
-        plt.title(title)
+        plt.title(f"Effect of Z{k}")
         plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, fname), dpi=160)
+        plt.savefig(os.path.join(output_dir, f"{prefix}_Z{k}.png"), dpi=160)
         plt.close()
