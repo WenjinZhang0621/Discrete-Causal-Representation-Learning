@@ -84,8 +84,8 @@ def get_EM_ACDM_with_missing(X, Q, nu_in, beta_in, gamma_in, max_iter=20, tol=0.
 
     options = {"disp": False, "maxiter": 200}
 
-    lb = [np.concatenate(([-2.0], np.zeros(int(np.sum(Q[j, :]))), [1e-6])) for j in range(J)]
-    ub = [np.concatenate((4.0 * np.ones(int(np.sum(Q[j, :])) + 1), [2.0])) for j in range(J)]
+    lb = [np.concatenate(([-2.0], -3.0 * np.ones(int(np.sum(Q[j, :]))), [0.0])) for j in range(J)]
+    ub = [np.concatenate(( 4.0 * np.ones(int(np.sum(Q[j, :])) + 1), [2.0])) for j in range(J)]
 
     while abs(err) > tol and itera < max_iter:
         old_loglik = loglik
