@@ -36,7 +36,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--p_path", type=str, default="data/TIMSS/TIMSS_estimate_p.npz")
     parser.add_argument("--K", type=int, default=7)
-    parser.add_argument("--N", type=int, default=5000)
+    parser.add_argument("--N", type=int, default=620)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--results_dir", type=str, default="results/timss")
     args = parser.parse_args()
