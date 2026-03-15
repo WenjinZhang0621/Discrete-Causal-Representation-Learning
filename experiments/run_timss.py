@@ -73,14 +73,20 @@ def main():
     if Q.shape[0] != J:
         raise ValueError(f"X has {J} columns, but Q has {Q.shape[0]} rows")
 
-    nu_in = np.random.rand(2**K, 1)
-    nu_in = nu_in / np.sum(nu_in)
+    nu_in = np.random.dirichlet(5 * np.ones(2**K)).reshape(-1, 1)
 
-    gamma_in = 0.4 * np.ones((J, 1))
-    beta_in = np.hstack([
-        2 * np.ones((J, 1)) + np.random.rand(J, 1),
-        Q * (np.random.rand(J, K) + 0.5)
-    ])
+    g = 2.0 + 0.5 * np.random.rand(J, 1)
+    c = 4.0 + 0.5 * np.random.rand(J, 1)
+
+    beta_in = np.zeros((J, K + 1))
+    beta_in[:, 0] = g[:, 0]
+
+    for j in range(J):
+        active = np.where(Q[j, :] == 1)[0]
+        w = np.random.dirichlet(5 * np.ones(len(active)))
+        beta_in[j, 1 + active] = w * (c[j, 0] - g[j, 0])
+
+    gamma_in = 0.5 * np.ones((J, 1))
 
     p_hat, B_hat, gamma_hat, loglik, itera = get_EM_ACDM_with_missing(
         X, Q, nu_in, beta_in, gamma_in, max_iter=args.max_iter, tol=args.tol
