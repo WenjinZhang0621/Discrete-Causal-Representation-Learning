@@ -14,33 +14,46 @@ def save_effect_heatmaps(
     B_hat: np.ndarray,
     output_dir: str,
     grid_hw: int | None = None,
-    include_intercept: bool = False,
     prefix: str = "effect",
 ):
-    """
-    Save heatmaps for the intercept and/or latent effects.
-
-    B_hat has shape (J, K+1).
-    Column 0 is the intercept and columns 1..K are latent effects.
-    """
     os.makedirs(output_dir, exist_ok=True)
-    J, K1 = B_hat.shape
 
+    J, K1 = B_hat.shape
     if grid_hw is None:
         grid_hw = int(round(math.sqrt(J)))
     if grid_hw * grid_hw != J:
-        raise ValueError(f"J={J} is not a perfect square, so it cannot be reshaped to a square heatmap.")
+        raise ValueError(
+            f"J={J} is not a perfect square, so it cannot be reshaped to a square heatmap."
+        )
 
-    start_col = 0 if include_intercept else 1
-    for col in range(start_col, K1):
-        hm = B_hat[:, col].reshape(grid_hw, grid_hw)
+    heatmaps = []
+    for k in range(K1):
+        lv = np.zeros(K1, dtype=float)
+        lv[k] = 1.0
+        heatmaps.append(expit(B_hat @ lv))
 
+    vals = np.concatenate(heatmaps)
+    vmin, vmax = float(vals.min()), float(vals.max())
+
+    for k, hm in enumerate(heatmaps):
         plt.figure(figsize=(4, 4))
-        plt.imshow(hm, cmap="gray", interpolation="nearest")
+        plt.imshow(
+            hm.reshape(grid_hw, grid_hw),
+            cmap="gray",
+            vmin=vmin,
+            vmax=vmax,
+            interpolation="nearest",
+        )
         plt.colorbar()
-        title = "Intercept" if col == 0 else f"Effect of Z{col}"
+
+        if k == 0:
+            title = "Intercept"
+            fname = "intercept.png"
+        else:
+            title = f"Effect of Z{k}"
+            fname = f"{prefix}_Z{k}.png"
+
         plt.title(title)
         plt.tight_layout()
-        fname = "intercept.png" if col == 0 else f"{prefix}_Z{col}.png"
         plt.savefig(os.path.join(output_dir, fname), dpi=160)
         plt.close()
