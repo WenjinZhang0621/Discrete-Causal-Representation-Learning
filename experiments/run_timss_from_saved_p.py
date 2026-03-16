@@ -80,7 +80,7 @@ def main():
         json.dump(summary, f, indent=2)
 
     print("Saved latent samples to:", os.path.join(args.results_dir, "latent_samples_from_phat.npy"))
-    print("Saved graph png to:", os.path.join(args.results_dir, "d_1.png"))
+    print("Saved graph png to:", os.path.join(args.results_dir, "TIMSS.png"))
 
 
 if __name__ == "__main__":
