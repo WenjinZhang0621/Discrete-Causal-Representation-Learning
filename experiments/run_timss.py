@@ -102,7 +102,6 @@ def main():
 
     record_est = ges(sam, score_func="local_score_BDeu")
     G_hat = record_est["G"].graph
-    np.save(os.path.join(args.results_dir, "latent_graph_estimated.npy"), G_hat)
 
     labels = [f"Z{i+1}" for i in range(K)]
     pyd_est = GraphUtils.to_pydot(record_est["G"], labels=labels)
@@ -130,7 +129,6 @@ def main():
     print("Saved gamma_hat to:", os.path.join(args.results_dir, "gamma_hat.npy"))
     print("Saved latent samples to:", os.path.join(args.results_dir, "latent_samples_from_phat.npy"))
     print("Saved estimated graph PNG to:", os.path.join(args.results_dir, "latent_graph_estimated.png"))
-    print("Saved estimated graph matrix to:", os.path.join(args.results_dir, "latent_graph_estimated.npy"))
     print("Saved summary to:", os.path.join(args.results_dir, "summary.json"))
 
 
