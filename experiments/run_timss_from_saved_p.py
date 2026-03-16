@@ -54,20 +54,14 @@ def main():
             f"Loaded vector has length {p_hat.shape[0]}, but K={args.K} implies length {2 ** args.K}"
         )
 
-    np.save(os.path.join(args.results_dir, "p_hat.npy"), p_hat)
-
     sam = sample_latents_from_p(p_hat, N=args.N, K=args.K)
     np.save(os.path.join(args.results_dir, "latent_samples_from_phat.npy"), sam)
-
-    Record = ges(sam, score_func="local_score_BDeu")
-    G_hat = Record["G"].graph
-    np.save(os.path.join(args.results_dir, "latent_graph_estimated.npy"), G_hat)
 
     labels = [f"Z{i+1}" for i in range(args.K)]
     pyd = GraphUtils.to_pydot(Record["G"], labels=labels)
 
     # keep your preferred file name
-    pyd.write_png(os.path.join(args.results_dir, "d_1.png"))
+    pyd.write_png(os.path.join(args.results_dir, "TIMSS.png"))
 
     summary = {
         "p_path": args.p_path,
