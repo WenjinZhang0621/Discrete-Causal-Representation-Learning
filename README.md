@@ -1,4 +1,3 @@
-
 # Discrete Causal Representation Learning
 
 Code for the paper **Discrete Causal Representation Learning**: [PDF](https://yuqigu.github.io/assets/pdf/DCRL_Mar07_2026.pdf)
@@ -36,6 +35,12 @@ For the TIMSS experiment,
 
 ```bash
 python experiments/run_timss.py --x_path data/TIMSS/time.csv --q_path data/TIMSS/Q.csv --K 7 --max_iter 100 --tol 0.1
+```
+
+For the TIMSS experiment using the estimated latent distribution used in the paper, which reproduces the exact TIMSS graph reported in the paper,
+
+```bash
+python experiments/run_timss_from_saved_p.py --p_path data/TIMSS/TIMSS_estimate_p.npz 
 ```
 
 ## Output
@@ -107,10 +112,15 @@ The TIMSS script writes outputs to `results/timss/`, including `p_hat.npy`, `B_h
 * `experiments/run_timss.py`
 
   * the executable CLI script for the TIMSS experiment
+* `experiments/run_timss_from_saved_p.py`
+
+  * the executable CLI script that uses the saved estimated latent distribution from the paper and reproduces the exact TIMSS graph reported in the paper
 * `data/TIMSS/Q.csv`
 
   * Q-matrix for the TIMSS experiment
 * `data/TIMSS/time.csv`
 
   * observed TIMSS data matrix used by `run_timss.py`
+* `data/TIMSS/TIMSS_estimate_p.npz`
 
+  * the saved estimated latent distribution used in the paper, used by `run_timss_from_saved_p.py` to reproduce the exact TIMSS graph reported in the paper
