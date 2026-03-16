@@ -46,7 +46,6 @@ def main():
 
     data = np.load(args.p_path)
 
-    # your saved file stores p_est, but we rename to p_hat internally
     p_hat = np.asarray(data["p_est"], dtype=float).reshape(-1, 1)
 
     if p_hat.shape[0] != 2 ** args.K:
@@ -56,11 +55,11 @@ def main():
 
     sam = sample_latents_from_p(p_hat, N=args.N, K=args.K)
     np.save(os.path.join(args.results_dir, "latent_samples_from_phat.npy"), sam)
-
+    Record = ges(sam, score_func="local_score_BDeu")
+    G_hat = Record["G"].graph
     labels = [f"Z{i+1}" for i in range(args.K)]
     pyd = GraphUtils.to_pydot(Record["G"], labels=labels)
 
-    # keep your preferred file name
     pyd.write_png(os.path.join(args.results_dir, "TIMSS.png"))
 
     summary = {
