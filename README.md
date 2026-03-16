@@ -49,7 +49,7 @@ Main simulation results are written automatically to `results/`, for example `re
 
 The seesaw script writes outputs to `results/seesaw/`, including `p_hat.npy`, `B_hat.npy`, `latent_graph_estimated.png`, `latent_graph_estimated.npy`, `summary.json`, and heatmaps under `results/seesaw/heatmaps/`.
 
-The TIMSS script writes outputs to `results/timss/`, including `p_hat.npy`, `B_hat.npy`, `gamma_hat.npy`, `latent_samples_from_phat.npy`, `latent_graph_estimated.png`, `latent_graph_estimated.npy`, and `summary.json`.
+The TIMSS script writes outputs to `results/timss/`, including `p_hat.npy`, `B_hat.npy`, `gamma_hat.npy`, `latent_samples_from_phat.npy`, `latent_graph_estimated.png`, and `summary.json`.
 
 ## File map
 
