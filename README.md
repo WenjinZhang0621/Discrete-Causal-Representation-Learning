@@ -2,9 +2,9 @@
 
 ## Installation
 
+After unzipping the archive, open a terminal in the extracted folder and run
+
 ```bash
-git clone https://github.com/WenjinZhang0621/Discrete-Causal-Representation-Learning.git
-cd Discrete-Causal-Representation-Learning
 conda env create -f environment.yml
 conda activate dcrl
 ````
