@@ -477,7 +477,7 @@ class DAGEstimator(GenerateData):
                 self.B_hat = np.concatenate((B_update[:, [0]], thres(B_update[:, 1:], self.tau)), axis=1)
                 t += 1
                 print(f"SAEM Iteration {t}, Err {err:.5f}")
-                iter_indicator = (abs(err) > self.tol and t < self.max_iter)
+                iter_indicator = ((t < 3 or abs(err) > self.tol) and t < self.max_iter)
 
             self._saem_finalize_p(counts_smooth)
             return self.p_hat, self.B_hat, self.A_hat, t, loglik
