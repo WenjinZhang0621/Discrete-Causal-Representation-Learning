@@ -1,0 +1,20 @@
+name: Tests
+on: [push, pull_request]
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      VECLIB_MAXIMUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Regression tests compare against the original public source.
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - run: python -m pytest tests -q
+      - run: python experiments/verify_timss_comparison.py

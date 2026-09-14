@@ -12,5 +12,5 @@ factor_analyzer
 graphviz
 pydot
 tqdm
-causal-learn
+causal-learn==0.1.4.8
 Pillow

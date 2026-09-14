@@ -2,10 +2,11 @@ import numpy as np
 from scipy.special import logit
 from factor_analyzer import Rotator
 
-from dcrl.utils import binary, thres
+from dcrl.utils import thres
+from dcrl.initialization import _empirical_latent_probabilities
 
 
-def init_seesaw(K: int, X: np.ndarray, epsilon: float = 1e-5):
+def init_seesaw(K: int, X: np.ndarray, epsilon: float = 1e-5, *, sparse=False):
     X = X.astype(np.float64)
     N, J = X.shape
 
@@ -16,8 +17,6 @@ def init_seesaw(K: int, X: np.ndarray, epsilon: float = 1e-5):
 
     Xk = X[:, keep]
     Jk = Xk.shape[1]
-
-    A_src = binary(np.arange(2**K), K)
 
     U, S, Vt = np.linalg.svd(Xk, full_matrices=False)
     m = max(K + 1, int(np.sum(S > 1.01 * np.sqrt(N))))
@@ -73,11 +72,9 @@ def init_seesaw(K: int, X: np.ndarray, epsilon: float = 1e-5):
     b = np.mean(X_inv_adj, axis=0) - B_re_est @ np.mean(A_est, axis=0)
     B_ini_k = np.column_stack((b, B_re_est))
 
-    rows_as_tuples = [tuple(row) for row in A_est]
-    row_counts_dict = {row: rows_as_tuples.count(row) for row in set(rows_as_tuples)}
-    p_init = np.array([row_counts_dict.get(tuple(row), 0) for row in A_src], dtype=float) / N
+    p_init = _empirical_latent_probabilities(A_est, K, sparse=sparse)
 
     B_init = np.zeros((J, K + 1), dtype=float)
     B_init[keep, :] = B_ini_k
 
-    return p_init.reshape(-1, 1), B_init, A_est
+    return p_init, B_init, A_est

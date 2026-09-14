@@ -68,7 +68,7 @@ def psaem_seesaw(
     X = X.astype(float)
     N, J = X.shape
 
-    p_hat, B_hat, A_hat = init_seesaw(K=K, X=X, epsilon=epsilon)
+    p_hat, B_hat, A_hat = init_seesaw(K=K, X=X, epsilon=epsilon, sparse=True)
 
     pow2 = 1 << np.arange(K - 1, -1, -1)
     err = 1.0

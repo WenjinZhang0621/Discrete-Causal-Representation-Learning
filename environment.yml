@@ -20,4 +20,4 @@ dependencies:
   - pip
   - pip:
       - factor_analyzer
-      - causal-learn
+      - causal-learn==0.1.4.8

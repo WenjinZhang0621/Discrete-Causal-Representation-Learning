@@ -1,13 +1,47 @@
+from collections import Counter
+
 import numpy as np
 from scipy.linalg import inv
 from scipy.special import logit
 from factor_analyzer import Rotator
 
-from .utils import binary, thres
+from .utils import thres
 
 
-def initialize_parameters(X, J, K, distribution, epsilon):
-    A_src = binary(np.arange(2 ** K), K)
+def _empirical_latent_probabilities(A, K, *, sparse):
+    """Count observed states without constructing the binary state space.
+
+    Integer keys use the same most-significant-bit-first encoding as PSAEM.
+    Python integers also avoid overflow when the initializer is used alone
+    with more coordinates than fit in a machine word.
+    """
+    counts = Counter()
+    for row in A:
+        state = 0
+        for bit in row:
+            state = (state << 1) | int(bit)
+        counts[state] += 1
+
+    probabilities = {state: count / len(A) for state, count in counts.items()}
+    if sparse:
+        return probabilities
+
+    # Compatibility for callers that explicitly need a dense probability law.
+    dense = np.zeros((1 << K, 1), dtype=float)
+    for state, probability in probabilities.items():
+        dense[state, 0] = probability
+    return dense
+
+
+def initialize_parameters(X, J, K, distribution, epsilon, *, sparse=False):
+    """Spectral initialization with an optional sparse initial latent law.
+
+    ``sparse=True`` returns a dictionary of encountered encoded states and
+    probabilities, with missing states having probability zero. It avoids
+    every allocation proportional to 2**K. The default preserves the dense
+    return format used by external callers. B, gamma and A are identical in
+    both modes; PSAEM uses the sparse mode.
+    """
     gamma_in = np.zeros(J)
 
     if distribution == "Poisson":
@@ -66,13 +100,11 @@ def initialize_parameters(X, J, K, distribution, epsilon):
 
     B_ini = np.column_stack((b, B_re_est))
 
-    rows_as_tuples = [tuple(row) for row in A_est]
-    row_counts_dict = {row: rows_as_tuples.count(row) for row in set(rows_as_tuples)}
-    nu_in = (np.array([row_counts_dict.get(tuple(row), 0) for row in A_src])) / X.shape[0]
+    nu_in = _empirical_latent_probabilities(A_est, K, sparse=sparse)
 
     A_long = np.hstack((np.ones((X.shape[0], 1)), A_est))
     Tr = X_inv - A_long @ B_ini.T
     for j in range(J):
         gamma_in[j] = np.sum(Tr[:, j] ** 2) / X.shape[0]
 
-    return nu_in.reshape(-1, 1), B_ini, gamma_in.reshape(-1, 1), A_est
+    return nu_in, B_ini, gamma_in.reshape(-1, 1), A_est

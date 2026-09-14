@@ -4,132 +4,52 @@ import os
 import sys
 from pathlib import Path
 
+# Set before NumPy is imported; explicit user thread settings are respected.
+for key in ["OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"]:
+    os.environ.setdefault(key, "1")
 import numpy as np
-import pandas as pd
-from causallearn.search.ScoreBased.GES import ges
-from causallearn.utils.GraphUtils import GraphUtils
 
 ROOT = Path(__file__).resolve().parents[1]
-SRC = ROOT / "src"
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
-
-from dcrl.utils import binary
-from dcrl.timss.em import get_EM_ACDM_with_missing
-
-
-def sample_latents_from_p(p_hat: np.ndarray, N: int, K: int) -> np.ndarray:
-    sam = np.zeros((N, K), dtype=np.uint8)
-    qwe = np.asarray(p_hat, dtype=float).flatten()
-    qwe = np.clip(qwe, 0.0, None)
-    qwe = qwe / qwe.sum()
-
-    counts = np.random.multinomial(N, qwe)
-    n = 0
-    A_src = binary(np.arange(2**K), K)
-
-    for a in range(2**K):
-        cnt = int(counts[a])
-        if cnt > 0:
-            sam[n:n + cnt, :K] = np.tile(A_src[a, :K], (cnt, 1))
-            n += cnt
-
-    return sam
+sys.path.insert(0, str(ROOT / "src"))
+from dcrl.timss.refit import fit
+from dcrl.timss.output import file_hash, save_graph
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--x_path", type=str, required=True)
-    parser.add_argument("--q_path", type=str, required=True)
+    parser = argparse.ArgumentParser(description="Fit raw TIMSS data, then use multinomial latent resampling.")
+    parser.add_argument("--x_path", default=str(ROOT / "data/TIMSS/time.csv"))
+    parser.add_argument("--q_path", default=str(ROOT / "data/TIMSS/Q.csv"))
     parser.add_argument("--K", type=int, default=7)
-    parser.add_argument("--seed", type=int, default=1)
-    parser.add_argument("--max_iter", type=int, default=100)
-    parser.add_argument("--tol", type=float, default=0.1)
-    parser.add_argument("--results_dir", type=str, default="results/timss")
+    parser.add_argument("--seed", type=int, default=48, help="Measurement initialization seed")
+    parser.add_argument("--graph_seed", type=int, default=1)
+    parser.add_argument("--fn_ratio", type=float, default=0.2)
+    parser.add_argument("--max_iter", type=int, default=2000)
+    parser.add_argument("--tol", type=float, default=1e-7)
+    parser.add_argument("--results_dir", default="results/timss")
+    parser.add_argument("--no_plot", action="store_true")
     args = parser.parse_args()
-
-    np.random.seed(args.seed)
-    os.makedirs(args.results_dir, exist_ok=True)
-
-    df = pd.read_csv(args.x_path, header=None)
-    matrix1 = df.to_numpy(dtype=float)
-
-    nan_rows = np.where(np.all(np.isnan(matrix1), axis=1))[0]
-    matrix1_cleaned = np.delete(matrix1, nan_rows, axis=0)
-
-    lower_limit = np.e
-    upper_limit = np.e**6
-    X = np.clip(matrix1_cleaned, lower_limit, upper_limit).astype(float)
-
-    Q_df = pd.read_csv(args.q_path, header=None)
-    Q = Q_df.iloc[:, 1:].to_numpy().astype(int)
-
-    N, J = X.shape
-    K = Q.shape[1]
-
-    if args.K != K:
-        raise ValueError(f"--K={args.K}, but Q implies K={K}")
-
-    if Q.shape[0] != J:
-        raise ValueError(f"X has {J} columns, but Q has {Q.shape[0]} rows")
-
-    nu_in = np.random.dirichlet(5 * np.ones(2**K)).reshape(-1, 1)
-
-    g = 2.0 + 0.5 * np.random.rand(J, 1)
-    c = 4.0 + 0.5 * np.random.rand(J, 1)
-
-    beta_in = np.zeros((J, K + 1))
-    beta_in[:, 0] = g[:, 0]
-
-    for j in range(J):
-        active = np.where(Q[j, :] == 1)[0]
-        w = np.random.dirichlet(5 * np.ones(len(active)))
-        beta_in[j, 1 + active] = w * (c[j, 0] - g[j, 0])
-
-    gamma_in = 0.5 * np.ones((J, 1))
-
-    p_hat, B_hat, gamma_hat, loglik, itera = get_EM_ACDM_with_missing(
-        X, Q, nu_in, beta_in, gamma_in, max_iter=args.max_iter, tol=args.tol
-    )
-
-    np.save(os.path.join(args.results_dir, "p_hat.npy"), p_hat)
-    np.save(os.path.join(args.results_dir, "B_hat.npy"), B_hat)
-    np.save(os.path.join(args.results_dir, "gamma_hat.npy"), gamma_hat)
-
-    np.random.seed(args.seed)
-    sam = sample_latents_from_p(p_hat, N=N, K=K)
-    np.save(os.path.join(args.results_dir, "latent_samples_from_phat.npy"), sam)
-
-    record_est = ges(sam, score_func="local_score_BDeu")
-    G_hat = record_est["G"].graph
-
-    labels = [f"Z{i+1}" for i in range(K)]
-    pyd_est = GraphUtils.to_pydot(record_est["G"], labels=labels)
-    pyd_est.write_png(os.path.join(args.results_dir, "latent_graph_estimated.png"))
-
-    summary = {
-        "N": int(N),
-        "K": int(K),
-        "J": int(J),
-        "iterations": int(itera),
-        "loglik": float(loglik),
-        "results_dir": args.results_dir,
-        "x_path": args.x_path,
-        "q_path": args.q_path,
-        "n_removed_all_nan_rows": int(len(nan_rows)),
-        "clip_lower": float(lower_limit),
-        "clip_upper": float(upper_limit),
-    }
-
-    with open(os.path.join(args.results_dir, "summary.json"), "w", encoding="utf-8") as f:
-        json.dump(summary, f, indent=2)
-
-    print("Saved p_hat to:", os.path.join(args.results_dir, "p_hat.npy"))
-    print("Saved B_hat to:", os.path.join(args.results_dir, "B_hat.npy"))
-    print("Saved gamma_hat to:", os.path.join(args.results_dir, "gamma_hat.npy"))
-    print("Saved latent samples to:", os.path.join(args.results_dir, "latent_samples_from_phat.npy"))
-    print("Saved estimated graph PNG to:", os.path.join(args.results_dir, "latent_graph_estimated.png"))
-    print("Saved summary to:", os.path.join(args.results_dir, "summary.json"))
+    x = np.genfromtxt(args.x_path, delimiter=",")
+    remove = np.isnan(x).all(axis=1)
+    x = np.clip(x[~remove], np.e, np.e**6)
+    q = np.genfromtxt(args.q_path, delimiter=",")[:, 1:]
+    if q.shape[1] != args.K:
+        raise ValueError("K differs from the supplied Q matrix")
+    result = fit(x, q, seed=args.seed, max_iter=args.max_iter, tol=args.tol)
+    out = Path(args.results_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    for key, name in [("p", "p_hat.npy"), ("beta", "B_hat.npy"), ("gamma", "gamma_hat.npy")]:
+        value = result[key]
+        np.save(out / name, value.reshape(-1, 1) if key in ["p", "gamma"] else value)
+    np.savez_compressed(out / "fit.npz", **result)
+    metadata = dict(fit_source="raw student data", seed=args.seed, graph_seed=args.graph_seed,
+                    J=x.shape[1], iterations=int(result["iterations"]), converged=result["converged"],
+                    loglik=float(result["loglik"]), likelihood="Gaussian on clipped log times, including normalizing constant",
+                    max_iter=args.max_iter, tol=args.tol, x_path=args.x_path, q_path=args.q_path,
+                    x_sha256=file_hash(args.x_path), q_sha256=file_hash(args.q_path),
+                    n_removed_all_nan_rows=int(remove.sum()), clip_lower=float(np.e), clip_upper=float(np.e**6))
+    summary = save_graph(result["p"], len(x), args.K, args.fn_ratio, args.graph_seed,
+                         out, metadata=metadata, plot=not args.no_plot)
+    print(json.dumps(summary, indent=2))
 
 
 if __name__ == "__main__":

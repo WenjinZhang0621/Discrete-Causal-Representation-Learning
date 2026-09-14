@@ -7,7 +7,7 @@ After unzipping the archive, open a terminal in the extracted folder and run
 ```bash
 conda env create -f environment.yml
 conda activate dcrl
-````
+```
 
 ## Run
 
@@ -29,17 +29,48 @@ For the seesaw experiment using the pre-generated dataset used in the paper, whi
 python experiments/run_seesaw_from_dataset.py --dataset_path data/seesaw/seesaw_dataset.npz
 ```
 
-For the TIMSS experiment,
+For TIMSS, fit the original student responses and then use multinomial latent
+resampling. The fitting seed is 48 (selected by likelihood in the prior
+initialization comparison); the separate graph-sampling seed is 1. The default
+ratio is `f(N)/N = 0.2`, selected by the lowest BIC in the complete graph-scale
+comparison using multinomial sampling.
 
 ```bash
-python experiments/run_timss.py --x_path data/TIMSS/time.csv --q_path data/TIMSS/Q.csv --K 7 --max_iter 100 --tol 0.1
+python experiments/run_timss.py --fn_ratio 0.2 --seed 48 --graph_seed 1
 ```
 
-For the TIMSS experiment using the estimated latent distribution used in the paper, which reproduces the exact TIMSS graph reported in the paper,
+To reproduce the graph from the saved **fresh** latent distribution used in
+the revised comparison:
 
 ```bash
-python experiments/run_timss_from_saved_p.py --p_path data/TIMSS/TIMSS_estimate_p.npz 
+python experiments/run_timss_from_saved_p.py --fn_ratio 0.2 --seed 1
 ```
+
+Both commands use actual multinomial samples, with
+`f(N) = max(1, floor(fn_ratio * N))`. With `N=620` and ratio `0.2`, they draw
+124 latent observations and return a seven-edge CPDAG for the supplied fit
+and seed. Ratio `0.5` gives ten edges and a higher BIC. See the
+[complete latent-law and graph-scale comparison](docs/timss-comparison.md)
+for all examined settings, saved fitted parameters, and score verification.
+
+`--no_plot` skips PNG generation. Plotting uses Matplotlib. The JSON
+summary and numeric graph are always written. `--N` in the saved-fit command
+means original students, not the number of latent resamples. The new default
+checkpoint is `data/TIMSS/timss_refit.json`, which includes its fit provenance
+and input hashes. The historical `TIMSS_estimate_p.npz` is retained for explicit
+legacy comparisons; it is not the revised default.
+
+The fast TIMSS refit solves the same bounded fixed-Q lognormal item model by
+weighted least squares and profiled variance updates, using observed cells.
+Its reported likelihood includes the Gaussian normalizing constant on clipped
+log times. It is a saturated latent-law fit; attaching a graph afterward does
+not turn that likelihood into a graph-constrained likelihood or reduce its
+parameter count. Graph-constrained BIC comparisons require separate refitting.
+
+The default stays fixed for ball images and the simulation pipeline. Sparse
+initialization changes storage, not their statistical settings. The sampling
+condition needed for ratios below one is explained in
+[the consistency note](docs/resampling-consistency.md).
 
 ## Output
 
@@ -47,7 +78,9 @@ Main simulation results are written automatically to `results/`, for example `re
 
 The seesaw script writes outputs to `results/seesaw/`, including `p_hat.npy`, `B_hat.npy`, `latent_graph_estimated.png`, `latent_graph_estimated.npy`, `summary.json`, and heatmaps under `results/seesaw/heatmaps/`.
 
-The TIMSS script writes outputs to `results/timss/`, including `p_hat.npy`, `B_hat.npy`, `gamma_hat.npy`, `latent_samples_from_phat.npy`, `latent_graph_estimated.png`, and `summary.json`.
+The TIMSS script writes outputs to `results/timss/`, including `p_hat.npy`, `B_hat.npy`, `gamma_hat.npy`, `latent_samples_from_phat.npy`, `latent_counts.npy`, `latent_graph_estimated.npy`,
+`latent_graph_estimated.png`, and `summary.json`. Summaries record the actual
+resample size, seeds, input/sample hashes, and numerical package versions.
 
 ## File map
 
@@ -112,7 +145,7 @@ The TIMSS script writes outputs to `results/timss/`, including `p_hat.npy`, `B_h
   * the executable CLI script for the TIMSS experiment
 * `experiments/run_timss_from_saved_p.py`
 
-  * the executable CLI script that uses the saved estimated latent distribution from the paper and reproduces the exact TIMSS graph reported in the paper
+  * the saved-fit TIMSS CLI, using multinomial resampling from the fresh comparison fit
 * `data/TIMSS/Q.csv`
 
   * Q-matrix for the TIMSS experiment
@@ -121,4 +154,55 @@ The TIMSS script writes outputs to `results/timss/`, including `p_hat.npy`, `B_h
   * observed TIMSS data matrix used by `run_timss.py`
 * `data/TIMSS/TIMSS_estimate_p.npz`
 
-  * the saved estimated latent distribution used in the paper, used by `run_timss_from_saved_p.py` to reproduce the exact TIMSS graph reported in the paper
+  * historical latent distribution, retained for explicit legacy comparisons
+
+## Sparse probabilities in the main Gibbs–SAEM pipeline
+
+`DAGEstimator.PSAEM()` now returns `p_hat` as a `SparseLatentLaw`. Initialization,
+Gibbs updates, finalization and graph-evaluation resampling no longer allocate
+arrays over all `2**K` states. The measurement estimates and Gibbs count updates
+are unchanged. Integer state keys can exceed 64 bits.
+
+```python
+from dcrl import SparseLatentLaw
+
+# After fitting an estimator:
+p_hat = estimator.p_hat
+p_hat.save_npz("p_hat_sparse.npz")
+p_hat = SparseLatentLaw.load_npz("p_hat_sparse.npz")
+latent_samples = p_hat.sample(1000)
+probability = p_hat.probability(5)  # encoded binary configuration
+```
+
+The law stores encountered-state masses and, when needed, one aggregate uniform
+mixture weight. Positive `L_final` preserves the previous public implementation's
+rule of adding `L_final / U` to every state, where `U` is the number of unvisited
+states. A zero-count law retains the previous uniform fallback. Sampling the
+uniform component draws independent fair bits, without listing configurations.
+
+For `S` stored states and `M` requested samples, finalization takes `O(S)` work
+and storage, and resampling takes `O(S + M*K)` work and storage under machine-word
+key accounting. Larger keys require `O(K*S)` bits and additional polynomial bit
+operations. This removes mandatory state-space enumeration; it does not guarantee
+polynomial convergence or polynomial worst-case unrestricted GES search.
+
+Legacy consumers can explicitly request `DAGEstimator(..., dense_p_output=True)`
+or call `p_hat.to_dense()`; these optional conversions cost `O(2**K)`. The separate
+seesaw and TIMSS estimators retain their existing interfaces. The main simulation
+runner and its GES evaluation accept the sparse result directly.
+
+
+The ball-image initializer also counts encountered states without enumerating
+all configurations when called by its PSAEM routine. Its final dense output
+and the existing ball-image sampling settings are preserved.
+
+## Verification
+
+```bash
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m pytest tests -q
+```
+
+The regression tests compare the initialization and main Gibbs–SAEM estimates
+with public commit `190f198f9134655cca7c517905cdf61a994da6a8`, test sparse state
+keys beyond 64 bits, and verify multinomial resampling and repeated TIMSS runs.
+Use a normal clone with that commit in its history (CI fetches full history).

@@ -6,6 +6,7 @@ from scipy.special import expit
 from .data_generator import GenerateData
 from .evaluation import compute_shd_triplet
 from .initialization import initialize_parameters
+from .latent_law import SparseLatentLaw
 from .utils import binary, TLP, thres, initialize_function
 
 
@@ -38,6 +39,7 @@ class DAGEstimator(GenerateData):
         Q_N,
         kappa,
         L_final,
+        dense_p_output=False,
     ):
         super().__init__(N, J, K, Q_type, DAG_type, distribution, lob, upb, lob2, upb2, lob3, upb3, lob4, upb4, lob5, upb5)
         self.tau = tau
@@ -54,6 +56,7 @@ class DAGEstimator(GenerateData):
         self.algorithm = algorithm
         self.kappa = kappa
         self.L_final = L_final
+        self.dense_p_output = dense_p_output
 
     def ftn_T(self, X):
         if self.distribution == "Poisson":
@@ -174,32 +177,17 @@ class DAGEstimator(GenerateData):
         raise ValueError(f"Unsupported distribution: {self.distribution}")
 
     def _saem_finalize_p(self, counts_smooth):
-        U_T = (1 << self.K) - len(counts_smooth)
-        nu_dense = np.zeros(1 << self.K, dtype=float)
-
-        if counts_smooth:
-            idxs = np.fromiter(counts_smooth.keys(), dtype=np.int64)
-            vals = np.fromiter((counts_smooth[k] for k in idxs), dtype=float)
-            nu_dense[idxs] = vals
-
-        if self.L_final > 0.0 and U_T > 0:
-            nu_dense += (self.L_final / U_T)
-
-        total = nu_dense.sum()
-        if total > 0:
-            nu_dense /= total
-        else:
-            nu_dense.fill(1.0 / (1 << self.K))
-
-        self.p_hat = nu_dense.reshape(-1, 1)
+        law = SparseLatentLaw.from_counts(self.K, counts_smooth, self.L_final)
+        self.p_hat = law.to_dense() if self.dense_p_output else law
 
     def PSAEM(self, ite):
         self.p_hat, self.B_hat, self.gamma_hat, self.A_hat = self.init(ite)
-        pow2 = (1 << np.arange(self.K - 1, -1, -1))
+        state_dtype = np.int64 if self.K <= 63 else object
+        pow2 = np.array([1 << k for k in range(self.K - 1, -1, -1)], dtype=state_dtype)
         err = 1
         t = 0
         loglik = 0
-        rows_idx0 = (self.A_hat * pow2).sum(axis=1).astype(np.int64)
+        rows_idx0 = (self.A_hat.astype(np.int64) * pow2).sum(axis=1).astype(state_dtype)
         counts_smooth = Counter()
         for u, c in zip(*np.unique(rows_idx0, return_counts=True)):
             counts_smooth[int(u)] = float(c)
@@ -221,7 +209,7 @@ class DAGEstimator(GenerateData):
                 ones_col = np.ones((self.N, 1), dtype=int)
 
                 for c in range(self.C):
-                    idx_cur = (A_cur * pow2).sum(axis=1).astype(np.int64)
+                    idx_cur = (A_cur.astype(np.int64) * pow2).sum(axis=1).astype(state_dtype)
                     for i in range(self.N):
                         z_i = np.dot(np.insert(A_cur[i], 0, 1, axis=0), self.B_hat.T).astype(float)
                         T_i = self.ftn_T(self.X[i, :]).T
@@ -310,7 +298,7 @@ class DAGEstimator(GenerateData):
                 ones_col = np.ones((self.N, 1), dtype=int)
 
                 for c in range(self.C):
-                    idx_cur = (A_cur * pow2).sum(axis=1).astype(np.int64)
+                    idx_cur = (A_cur.astype(np.int64) * pow2).sum(axis=1).astype(state_dtype)
                     for i in range(self.N):
                         z_i = np.dot(np.insert(A_cur[i], 0, 1, axis=0), self.B_hat.T).astype(float)
                         T_i = self.ftn_T(self.X[i, :]).T
@@ -409,7 +397,7 @@ class DAGEstimator(GenerateData):
                 ones_col = np.ones((self.N, 1), dtype=int)
 
                 for c in range(self.C):
-                    idx_cur = (A_cur * pow2).sum(axis=1).astype(np.int64)
+                    idx_cur = (A_cur.astype(np.int64) * pow2).sum(axis=1).astype(state_dtype)
                     for i in range(self.N):
                         z_i = np.dot(np.insert(A_cur[i], 0, 1, axis=0), self.B_hat.T).astype(float)
                         T_i = self.ftn_T(self.X[i, :]).T
@@ -487,7 +475,9 @@ class DAGEstimator(GenerateData):
     def init(self, ite):
         self.generate_latent_data()
         self.generate_data()
-        return initialize_parameters(self.X, self.J, self.K, self.distribution, self.epsilon)
+        return initialize_parameters(
+            self.X, self.J, self.K, self.distribution, self.epsilon, sparse=True
+        )
 
     def estimate(self, ite, truth_graph):
         if self.distribution == "Poisson":

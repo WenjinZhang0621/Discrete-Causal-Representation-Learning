@@ -1,7 +1,8 @@
 import numpy as np
+from collections.abc import Mapping
 from causallearn.search.ScoreBased.GES import ges
 
-from .utils import binary
+from .latent_law import SparseLatentLaw
 
 
 def stitch_full_A(ZZ, ZX, n_x):
@@ -41,16 +42,26 @@ def shd_cpdag(M1, M2):
 
 
 def sample_latent_states_from_p(p_hat, K, sample_size):
+    if isinstance(p_hat, SparseLatentLaw):
+        if p_hat.K != K:
+            raise ValueError('K does not match the latent law')
+        return p_hat.sample(sample_size)
+    if isinstance(p_hat, Mapping):
+        return SparseLatentLaw.from_counts(K, p_hat).sample(sample_size)
+
+    # Backward compatibility for already-dense input: decode sampled states
+    # only, rather than constructing the full 2**K by K configuration array.
     sam = np.zeros((sample_size, K))
-    qwe = p_hat.flatten()
+    qwe = np.asarray(p_hat).reshape(-1)
+    if qwe.size != 1 << K:
+        raise ValueError('Dense probability vector must have length 2**K')
     counts = np.random.multinomial(sample_size, qwe)
-    A_src = binary(np.arange(2 ** K), K)
     n = 0
-    for a in range(2 ** K):
+    for a in np.flatnonzero(counts):
         cnt = int(counts[a])
-        if cnt > 0:
-            sam[n:n + cnt, :K] = np.tile(A_src[a, :K], (cnt, 1))
-            n += cnt
+        state = int(a)
+        sam[n:n + cnt] = [(state >> shift) & 1 for shift in range(K - 1, -1, -1)]
+        n += cnt
     return sam
 
 
