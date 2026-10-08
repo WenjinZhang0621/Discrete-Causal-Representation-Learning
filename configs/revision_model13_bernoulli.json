@@ -1,0 +1,16 @@
+{
+  "profile": "revision",
+  "seed_start": 10001,
+  "repetitions": 20,
+  "model": {
+    "K": 13, "DAG_type": "Model-13", "Q_type": "2", "distribution": "Bernoulli",
+    "signal_scheme": "restore_minimum", "epsilon": 0.001, "init_cutoff_c": 2.5
+  },
+  "grid": {"N": [3000, 7000], "signal_multiplier": [1.25, 1.5]},
+  "starts": [{"kind": "spectral"}],
+  "orientation": "column_sum",
+  "evaluation_alignment": "latent_sample",
+  "oracles": false,
+  "graph_all_starts": false,
+  "graph": {"methods": ["resampling", "plugin"], "ratios": [1.0], "ess": [1.0], "draws": 1}
+}

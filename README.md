@@ -7,9 +7,133 @@ After unzipping the archive, open a terminal in the extracted folder and run
 ```bash
 conda env create -f environment.yml
 conda activate dcrl
+python -m pip install --no-deps -e .
 ```
 
+Run these commands from the repository root after cloning or extracting the
+archive. The editable install makes `dcrl` available in Python.
+
+For the exact Python package versions used in validation, use a Python 3.12
+virtual environment instead:
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-reproducible.txt
+python -m pip install --no-deps -e .
+```
+
+The pip-only setup additionally needs the Graphviz `dot` executable on PATH
+for seesaw graph PNGs. The Conda environment above supplies Graphviz.
+
 ## Run
+
+Use the original entry points for legacy behavior, or a JSON study plan for
+the revision experiments.
+
+## Revision options and reproducible diagnostics
+
+The default profile is `legacy`. The `revision` profile changes only the
+default Bernoulli initialization clipping value from `1e-5` to `0.001`.
+The Varimax cutoff constant `2.5`, penalty, coefficient bounds, gain and
+stopping rules stay the same. This choice was tested in strong-signal settings.
+
+### Adjust initialization for your data
+
+Set either constant through the CLI, Python API or JSON plan. Explicit values
+override profile defaults.
+
+| Parameter | Meaning | Default |
+| --- | --- | --- |
+| `init_cutoff_c` | Positive c in the rotated-loading cutoff `1/(c*sqrt(J))` | `2.5` |
+| `epsilon` | For Bernoulli, clips the low-rank probability estimate to `[epsilon, 1-epsilon]` before logit | `1e-5` in `legacy`; `0.001` in `revision` |
+
+Larger c lowers the cutoff and retains more rotated loadings at initialization;
+the final Q estimate need not vary monotonically with c. Bernoulli requires
+`0 < epsilon < 0.5`.
+For Poisson, epsilon is a lower bound on the reconstructed log(X+1) scale
+(default `1e-50`); the Lognormal initializer does not use epsilon.
+
+For example, these flags explicitly choose c=2.5 and epsilon=0.001:
+
+```bash
+python experiments/run_parallel.py --start 1 --end 11 --n 3000 --k 10 --dag_type Tree --distribution Bernoulli --init_cutoff_c 2.5 --epsilon 0.001 --output_path results/custom_initialization.csv
+```
+
+To fit your own observed N-by-J matrix `X` using K latent variables:
+
+```python
+from dcrl.config import ExperimentConfig
+from dcrl.fitting import fit_observed
+
+cfg=ExperimentConfig(N=X.shape[0], J=X.shape[1], K=K,
+                     distribution="Bernoulli",
+                     init_cutoff_c=2.5, epsilon=0.001)
+fit=fit_observed(X, cfg, orientation="column_sum")
+```
+
+The original spectral initializer requires J>=3K and min(N,J)>=K. In a study
+JSON, put these values in `model` to fix them, or use, for example,
+`"grid": {"init_cutoff_c": [1.5, 2.5, 3.5], "epsilon": [0.0001, 0.001, 0.01]}`
+for a Cartesian sensitivity study. These are example grids, not automatic
+tuning rules. Study and CLI output manifests record the settings used.
+
+### Graph discovery and diagnostic studies
+
+Graph discovery has two options:
+
+* `resampling`: multinomial latent resampling, as in the existing pipeline.
+* `plugin`: BDeu evaluated at fractional sufficient counts `m * p_hat(z)`.
+  It uses unrounded counts directly and is deterministic for fixed inputs
+  and software.
+
+To save initial/final estimates, objectives, optimizer diagnostics, exact
+graph truth and Monte Carlo summaries:
+
+```bash
+python experiments/run_study.py --config configs/reviewer2_smoke.json --output results/reviewer2_smoke --jobs 2
+python experiments/run_study.py --config configs/revision_model13_bernoulli.json --output results/model13_revision --jobs 4
+```
+
+The first command is a small three-distribution integration check. The second
+compares both graph methods at N=3000/7000 with restored Q2 coefficients
+multiplied by 1.25/1.5, with 20 repetitions per setting.
+`configs/reviewer2_diagnostics.json` adds random/spectral starts, oracle
+stages, multiple graph draws and ESSs, and takes substantially longer.
+Set `repetitions` and freeze the plan before a larger study.
+
+The supplied plans use `evaluation_alignment="latent_sample"` to match latent
+coordinates from the final Gibbs sample. Q-support-based reference errors
+are saved separately. Matching is used only for evaluation.
+
+These plans cover general simulated measurement models. TIMSS and seesaw
+entry points retain their historical behavior, with no automatic final column
+orientation. `run_timss.py` uses one graph-sampling draw; the newer TIMSS
+200-candidate graph-constrained BIC selection and bootstrap analyses are not
+included. This release covers only the experiments documented here.
+
+The original simulation entry point also accepts explicit options:
+
+```bash
+python experiments/run_parallel.py --start 1 --end 11 --n 3000 --k 13 --dag_type Model-13 --distribution Bernoulli --profile revision --graph_method plugin --ess 1 --signal_scheme restore_minimum --signal_multiplier 1.25 --output_path results/model13_plugin.csv
+```
+
+`run_parallel.py` retains its historical three-size SHD output and sampled
+reference graph. Use `run_study.py` for the revision's full diagnostics and
+exact generator CPDAG. See [the revision-code guide](docs/revision-code.md)
+for APIs, all tuning options, orientation, oracle definitions, and limitations.
+
+To apply either graph method to a saved fit, including TIMSS or seesaw:
+
+```bash
+python experiments/learn_graph.py --p_path data/TIMSS/timss_refit.json --k 7 --effective_n 124 --method plugin --ess 1 --output results/timss_plugin
+```
+
+This graph-only command does not refit the measurement model or change the
+default TIMSS analysis. `--effective_n` is the count scale m, whereas ESS is
+the BDeu prior's equivalent sample size; they are different parameters.
+
+## Original entry points
 
 For the main simulation pipeline,
 

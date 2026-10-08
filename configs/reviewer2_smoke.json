@@ -1,0 +1,17 @@
+{
+  "profile": "revision",
+  "seed_start": 101,
+  "repetitions": 2,
+  "model": {"N": 250, "K": 3, "DAG_type": "Tree", "Q_type": "2", "max_iter": 4},
+  "grid": {"distribution": ["Bernoulli", "Poisson", "Lognormal"]},
+  "starts": [
+    {"kind": "spectral"},
+    {"kind": "spectral_jitter", "jitter": 0.1},
+    {"kind": "random"}
+  ],
+  "orientation": "column_sum",
+  "evaluation_alignment": "latent_sample",
+  "oracles": true,
+  "graph_all_starts": true,
+  "graph": {"methods": ["resampling", "plugin"], "ratios": [1.0], "ess": [0.5, 1.0], "draws": 2}
+}

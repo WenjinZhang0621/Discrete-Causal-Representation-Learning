@@ -1,0 +1,18 @@
+# Versions used for the 2026-10-08 validation (Python 3.12).
+numpy==2.5.3
+scipy==1.18.1
+pandas==3.0.5
+matplotlib==3.11.1
+scikit-learn==1.9.0
+networkx==3.6.1
+PyYAML==6.0.3
+pytest==9.1.1
+joblib==1.6.0
+filelock==3.32.5
+factor_analyzer==0.5.1
+graphviz==0.21
+pydot==4.0.1
+tqdm==4.70.0
+causal-learn==0.1.4.8
+Pillow==12.3.0
+threadpoolctl==3.6.0

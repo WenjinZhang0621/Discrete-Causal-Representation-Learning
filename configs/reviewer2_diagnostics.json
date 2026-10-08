@@ -1,0 +1,22 @@
+{
+  "profile": "revision",
+  "seed_start": 20001,
+  "repetitions": 20,
+  "model": {
+    "N": 3000, "K": 13, "DAG_type": "Model-13", "Q_type": "2", "distribution": "Bernoulli",
+    "signal_scheme": "restore_minimum", "signal_multiplier": 1.25,
+    "epsilon": 0.001, "init_cutoff_c": 2.5
+  },
+  "starts": [
+    {"kind": "spectral"},
+    {"kind": "spectral", "id": "spectral_another_saem_seed"},
+    {"kind": "spectral_jitter", "jitter": 0.1},
+    {"kind": "random"},
+    {"kind": "random"}
+  ],
+  "orientation": "column_sum",
+  "evaluation_alignment": "latent_sample",
+  "oracles": true,
+  "graph_all_starts": true,
+  "graph": {"methods": ["resampling", "plugin"], "ratios": [0.5, 1.0, 2.0], "ess": [0.1, 1.0, 10.0], "draws": 3}
+}
