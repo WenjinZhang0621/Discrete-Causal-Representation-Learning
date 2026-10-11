@@ -69,7 +69,7 @@ from dcrl.fitting import fit_observed
 cfg=ExperimentConfig(N=X.shape[0], J=X.shape[1], K=K,
                      distribution="Bernoulli",
                      init_cutoff_c=2.5, epsilon=0.001)
-fit=fit_observed(X, cfg, orientation="column_sum")
+fit=fit_observed(X, cfg)  # final column-sum orientation is mandatory
 ```
 
 The original spectral initializer requires J>=3K and min(N,J)>=K. In a study
@@ -106,9 +106,10 @@ The supplied plans use `evaluation_alignment="latent_sample"` to match latent
 coordinates from the final Gibbs sample. Q-support-based reference errors
 are saved separately. Matching is used only for evaluation.
 
-These plans cover general simulated measurement models. TIMSS and seesaw
-entry points retain their historical behavior, with no automatic final column
-orientation. `run_timss.py` uses one graph-sampling draw; the newer TIMSS
+These plans cover general simulated measurement models. Final fitted outputs
+are now column-sum oriented in the main simulation, TIMSS and seesaw entry
+points; raw internal optimization traces are unchanged. Exactly zero column
+sums remain unresolved and are explicitly reported when available. `run_timss.py` uses one graph-sampling draw; the newer TIMSS
 200-candidate graph-constrained BIC selection and bootstrap analyses are not
 included. This release covers only the experiments documented here.
 
