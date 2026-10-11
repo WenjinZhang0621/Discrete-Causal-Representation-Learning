@@ -91,7 +91,7 @@ def test_exact_likelihood_and_orientation_match_direct_mixture(family):
 
 def test_dense_orientation_preserves_shape_and_distribution():
     B=np.array([[0.,-2.,1.],[1.,-.5,0.]])
-    p=np.arange(1,9,dtype=float)
+    p=np.arange(1,5,dtype=float)
     p=p/p.sum()
     for law in (p,p.reshape(-1,1)):
         out=orient_columns(B,law)
