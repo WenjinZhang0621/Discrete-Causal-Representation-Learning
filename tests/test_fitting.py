@@ -1,4 +1,4 @@
-"""Regression and statistical invariants for the optional fitting API."""
+"""Regression and statistical invariants for mandatory fitted-output orientation."""
 import contextlib
 import io
 from pathlib import Path
@@ -109,6 +109,7 @@ def test_known_support_is_fixed_and_not_thresholded():
     with threadpool_limits(limits=1),contextlib.redirect_stdout(io.StringIO()):
         result=fit_observed(X,cfg,[{"kind": "random","seed": 901}],known_Q=Q)
     assert result["status"]=="ok",result
+    assert result["orientation"]["mode"]=="column_sum"
     assert result["fit_kind"]=="fixed_support_nuisance"
     assert result["effective_penalty"]==result["penalty"]==0
     np.testing.assert_array_equal(result["B"][:,1:][Q==0],0)
@@ -179,5 +180,6 @@ def test_low_level_observed_data_never_generates_truth(monkeypatch):
     for a,b in zip(expected_initial[1:],actual_initial[1:]):
         np.testing.assert_array_equal(a,b)
     np.testing.assert_array_equal(est.X,X)
-    np.testing.assert_array_equal(direct[1],fitted["B"])
-    np.testing.assert_array_equal(direct[0].to_dense(),fitted["p"].to_dense())
+    expected=orient_columns(direct[1],direct[0])
+    np.testing.assert_array_equal(expected["B"],fitted["B"])
+    np.testing.assert_array_equal(expected["p"].to_dense(),fitted["p"].to_dense())
