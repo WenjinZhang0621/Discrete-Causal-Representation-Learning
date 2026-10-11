@@ -1,4 +1,7 @@
-"""Distribution-preserving binary-coordinate orientation after fitting."""
+"""Distribution-preserving binary-coordinate orientation after fitting.
+
+Accepts sparse or dense latent laws and preserves the input law type and shape.
+"""
 
 import numpy as np
 
@@ -11,12 +14,22 @@ def orient_columns(B,p,gamma=None,*,zero_tolerance=0.0):
     This is a reparameterization, not a constrained refit. The transformed
     intercept and slopes need not lie in the optimizer's original box. No
     column permutation is performed. Zero-sum columns have no chosen sign.
+    Dense laws retain their original shape; sparse laws remain sparse.
     """
     B=np.asarray(B,dtype=float)
     if B.ndim!=2 or not np.all(np.isfinite(B)):
         raise ValueError("B must be a finite item-by-(K+1) matrix")
-    if not isinstance(p,SparseLatentLaw) or B.shape[1]!=p.K+1:
-        raise ValueError("p must be a SparseLatentLaw with K matching B")
+    K=B.shape[1]-1
+    if isinstance(p,SparseLatentLaw):
+        if p.K!=K:
+            raise ValueError("p.K must match the number of slopes in B")
+        dense=None
+    else:
+        dense=np.asarray(p,dtype=float)
+        if (dense.ndim not in (1,2) or dense.size!=(1<<K) or
+                not np.isfinite(dense).all() or (dense<0).any() or
+                not np.isclose(dense.sum(),1.0)):
+            raise ValueError("Dense p must be a normalized 2**K-state probability array")
     if not np.isfinite(zero_tolerance) or zero_tolerance<0:
         raise ValueError("zero_tolerance must be finite and nonnegative")
     sums=B[:,1:].sum(axis=0)
@@ -25,8 +38,11 @@ def orient_columns(B,p,gamma=None,*,zero_tolerance=0.0):
     oriented=B.copy()
     oriented[:,0]+=B[:,flips+1].sum(axis=1)
     oriented[:,flips+1]*=-1
-    mask=sum(1<<(p.K-1-int(k)) for k in flips)
-    law=SparseLatentLaw(p.K,{state^mask: mass for state,mass in p.masses.items()},p.uniform_mass)
+    mask=sum(1<<(K-1-int(k)) for k in flips)
+    if dense is None:
+        law=SparseLatentLaw(K,{state^mask: mass for state,mass in p.masses.items()},p.uniform_mass)
+    else:
+        law=dense.reshape(-1)[np.arange(1<<K)^mask].reshape(dense.shape)
     return {
         "B": oriented,"p": law,
         "gamma": None if gamma is None else np.asarray(gamma).copy(),

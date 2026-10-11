@@ -96,8 +96,8 @@ Lognormal intercept [-2,4], slopes [0,4], variance [0,2]; Bernoulli intercept
 bounds only, not latent CPT bounds or the Lognormal variance bound. Finite
 Lognormal scoring requires strictly positive fitted variances.
 
-Bernoulli optimization allows signed slopes. `orientation="column_sum"`
-applies the following change after fitting:
+Bernoulli optimization allows signed slopes. Final fitted outputs always
+apply the following column-sum orientation after fitting:
 
     s_k=1{sum_j beta[j,k] < 0}
     beta_new[j,k]=(-1)^s_k beta[j,k]
@@ -107,7 +107,8 @@ applies the following change after fitting:
 This preserves the observable distribution and Q support. Raw B/p and flip
 metadata are retained; zero column sums are marked unresolved. Oriented
 coefficients can lie outside the optimization box. The change sets an output
-orientation, not a constraint during fitting.
+orientation, not a constraint during fitting. The low-level PSAEM return
+remains raw for optimizer-trajectory tests; public fit outputs are oriented.
 
 The supplied study plans set `evaluation_alignment="latent_sample"`. For
 evaluation only, let Ahat be the final retained Gibbs sample and Atrue the
@@ -204,13 +205,13 @@ parameters and do not reproduce its old Q2 table.
 ## Release scope
 
 This release covers general simulation fitting, graph options and the
-Reviewer 2 diagnostics. Seesaw and TIMSS retain their prior behavior without
-automatic final orientation. `run_timss.py` uses one graph draw and its saved
+Reviewer 2 diagnostics. Seesaw and TIMSS retain their fitting iterations, but fitted outputs now
+receive final column-sum orientation. `run_timss.py` uses one graph draw and its saved
 comparison covers the earlier graph-scale experiment. The newer TIMSS
 200-candidate graph-constrained BIC search, bootstrap, EBIC/K-selection,
 Gaussian grayscale and additional baseline experiments are not included.
 
 The code retains a finite numerical M-step and post-M-step hard threshold;
-final orientation is optional. For L>0, the public implementation adds its
+final fitted-output orientation is mandatory. For L>0, the public implementation adds its
 uniform pseudocount contribution to all states. This differs from the
 response-letter formula; L=0 experiments are unaffected.

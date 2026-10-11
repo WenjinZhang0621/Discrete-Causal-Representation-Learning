@@ -145,7 +145,7 @@ def _make_estimator(X,cfg,initial,known_Q):
     return DAGEstimator(**kwargs,observed_X=X,initial_parameters=initial,known_Q=known_Q)
 
 
-def fit_observed(X,config,start_specs=None,known_Q=None,orientation="none"):
+def fit_observed(X,config,start_specs=None,known_Q=None,orientation="column_sum"):
     """Fit observed X and retain every attempted start, including failures.
 
     Start dictionaries accept ``kind``, ``seed`` (SAEM seed), ``init_seed``
@@ -169,8 +169,8 @@ def fit_observed(X,config,start_specs=None,known_Q=None,orientation="none"):
         raise ValueError("X shape must agree with config.N and config.J")
     if cfg.algorithm!="PSAEM":
         raise ValueError("fit_observed currently supports algorithm='PSAEM'")
-    if orientation not in {"none","column_sum"}:
-        raise ValueError("orientation must be 'none' or 'column_sum'")
+    if orientation!="column_sum":
+        raise ValueError("All final fits must use column_sum orientation")
     if known_Q is not None:
         known_Q=np.asarray(known_Q)
         if known_Q.shape!=(cfg.J,cfg.K) or not np.all((known_Q==0)|(known_Q==1)):

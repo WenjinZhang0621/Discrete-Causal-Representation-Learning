@@ -1,4 +1,4 @@
-"""Regression and statistical invariants for the optional fitting API."""
+"""Regression and statistical invariants for mandatory fitted-output orientation."""
 import contextlib
 import io
 from pathlib import Path
@@ -89,6 +89,26 @@ def test_exact_likelihood_and_orientation_match_direct_mixture(family):
     np.testing.assert_array_equal(B,np.array([[3.,-.7,.4],[2.,-.3,-.2]]))
 
 
+def test_dense_orientation_preserves_shape_and_distribution():
+    B=np.array([[0.,-2.,1.],[1.,-.5,0.]])
+    p=np.arange(1,5,dtype=float)
+    p=p/p.sum()
+    for law in (p,p.reshape(-1,1)):
+        out=orient_columns(B,law)
+        assert out["p"].shape==law.shape
+        assert out["flipped_columns"]==[0]
+        assert np.all(out["B"][:,1:].sum(axis=0)>=0)
+        from dcrl.metrics import align_latent_law
+        np.testing.assert_allclose(out["p"].reshape(-1),align_latent_law(p,[0,1],[1,0]))
+    with pytest.raises(ValueError,match="normalized"):
+        orient_columns(B,np.ones(4))
+
+def test_orientation_is_mandatory_on_fit_api():
+    X=np.random.RandomState(1).binomial(1,.5,(20,6))
+    cfg=ExperimentConfig(N=20,K=2,distribution="Bernoulli",max_iter=1)
+    with pytest.raises(ValueError,match="column_sum"):
+        fit_observed(X,cfg,orientation="none")
+
 def test_zero_columns_and_large_sparse_law():
     B=np.zeros((2,81))
     p=SparseLatentLaw(80,{0: .7,1<<79: .3})
@@ -109,6 +129,7 @@ def test_known_support_is_fixed_and_not_thresholded():
     with threadpool_limits(limits=1),contextlib.redirect_stdout(io.StringIO()):
         result=fit_observed(X,cfg,[{"kind": "random","seed": 901}],known_Q=Q)
     assert result["status"]=="ok",result
+    assert result["orientation"]["mode"]=="column_sum"
     assert result["fit_kind"]=="fixed_support_nuisance"
     assert result["effective_penalty"]==result["penalty"]==0
     np.testing.assert_array_equal(result["B"][:,1:][Q==0],0)
@@ -179,5 +200,6 @@ def test_low_level_observed_data_never_generates_truth(monkeypatch):
     for a,b in zip(expected_initial[1:],actual_initial[1:]):
         np.testing.assert_array_equal(a,b)
     np.testing.assert_array_equal(est.X,X)
-    np.testing.assert_array_equal(direct[1],fitted["B"])
-    np.testing.assert_array_equal(direct[0].to_dense(),fitted["p"].to_dense())
+    expected=orient_columns(direct[1],direct[0])
+    np.testing.assert_array_equal(expected["B"],fitted["B"])
+    np.testing.assert_array_equal(expected["p"].to_dense(),fitted["p"].to_dense())

@@ -8,6 +8,8 @@ import numpy as np
 from scipy.optimize import lsq_linear
 from scipy.special import logsumexp
 
+from dcrl.orientation import orient_columns
+
 
 def initialize(q, seed):
     rng = np.random.RandomState(seed)
@@ -83,5 +85,7 @@ def fit(x, q, seed=48, max_iter=2000, tol=1e-7, initial=None):
         trace.append([iteration+1, ll-constant, change])
         if iteration > 0 and abs(change) <= tol:
             break
-    return dict(p=p, beta=beta, gamma=gamma, loglik=ll-constant, seed=seed,
+    oriented=orient_columns(beta,p,gamma)
+    beta,p=oriented['B'],oriented['p']
+    return dict(p=p, beta=beta, gamma=gamma, orientation={k:v for k,v in oriented.items() if k not in ('B','p','gamma')}, loglik=ll-constant, seed=seed,
                 iterations=iteration+1, converged=bool(abs(change) <= tol), trace=np.array(trace))

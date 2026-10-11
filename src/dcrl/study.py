@@ -369,7 +369,7 @@ def run_replicate(plan,setting_id,spec,seed,output):
         write_json(folder/'truth.json',{k:v for k,v in truth.items()
                                         if k not in ['p_true','cpdag_true','dag_true']})
         row.update(config=asdict(cfg),data_sha256=hashlib.sha256(data.X.tobytes()).hexdigest(),
-                   start_specs=start_specs(plan,seed),orientation=plan.get('orientation','none'))
+                   start_specs=start_specs(plan,seed),orientation='column_sum')
         phase='fit'
         def attempt_fit(known_Q=None):
             try:
@@ -426,6 +426,8 @@ def run_study(plan,output,jobs=1,resume=False):
         raise ValueError('repetitions must be positive and jobs must be nonzero')
     if plan.get('evaluation_alignment','Q_support') not in {'Q_support','latent_sample'}:
         raise ValueError('evaluation_alignment must be Q_support or latent_sample')
+    if plan.get('orientation','column_sum')!='column_sum':
+        raise ValueError('Study fits must use column_sum orientation')
     settings=expanded_settings(plan)
     # Validate configuration before creating output or launching workers.
     for _,spec in settings:

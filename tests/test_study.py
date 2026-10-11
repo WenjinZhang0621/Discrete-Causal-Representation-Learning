@@ -42,6 +42,11 @@ def test_known_q_probability_error_retains_known_labels(monkeypatch):
     assert flexible['latent_p_l1']==pytest.approx(.2)
 
 
+def test_study_rejects_disabled_orientation(tmp_path):
+    from dcrl.study import run_study
+    with pytest.raises(ValueError,match='column_sum'):
+        run_study(dict(model={'N':20,'K':2},orientation='none'),tmp_path/'bad')
+
 def test_duplicate_grid_settings_rejected():
     with pytest.raises(ValueError,match='duplicate'):
         expanded_settings(dict(model={'N':100,'K':3},grid={'epsilon':[.001,.001]}))
