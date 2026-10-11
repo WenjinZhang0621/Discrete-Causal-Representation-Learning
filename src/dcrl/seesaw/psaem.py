@@ -6,6 +6,7 @@ from scipy.special import expit
 
 from dcrl.utils import binary, TLP, thres, initialize_function
 from dcrl.seesaw.init import init_seesaw
+from dcrl.orientation import orient_columns
 
 
 def ftn_T(X: np.ndarray) -> np.ndarray:
@@ -212,4 +213,8 @@ def psaem_seesaw(
         nu_dense.fill(1.0 / (1 << K))
 
     p_hat = nu_dense.reshape(-1, 1)
+    oriented=orient_columns(B_hat,p_hat)
+    p_hat,B_hat=oriented['p'],oriented['B']
+    for k in oriented['flipped_columns']:
+        A_hat[:,k]=1-A_hat[:,k]
     return p_hat, B_hat, A_hat, t, loglik
