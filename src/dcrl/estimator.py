@@ -9,6 +9,7 @@ from .config import BoundsConfig
 from .evaluation import compute_shd_triplet
 from .initialization import initialize_parameters
 from .latent_law import SparseLatentLaw
+from .orientation import orient_columns
 from .utils import binary,TLP,thres,initialize_function
 
 
@@ -653,6 +654,12 @@ class DAGEstimator(GenerateData):
         else:
             raise ValueError(f"Unsupported distribution: {self.distribution}")
 
+        oriented=orient_columns(self.B_hat,self.p_hat,self.gamma_hat)
+        self.B_hat,self.p_hat=oriented['B'],oriented['p']
+        flips=oriented['flipped_columns']
+        if self.A_hat is not None:
+            self.A_hat[:,flips]=1-self.A_hat[:,flips]
+        self.orientation=oriented
         return compute_shd_triplet(
             p_hat=self.p_hat,
             B_hat=self.B_hat,
