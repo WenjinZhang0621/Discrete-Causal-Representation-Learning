@@ -89,6 +89,26 @@ def test_exact_likelihood_and_orientation_match_direct_mixture(family):
     np.testing.assert_array_equal(B,np.array([[3.,-.7,.4],[2.,-.3,-.2]]))
 
 
+def test_dense_orientation_preserves_shape_and_distribution():
+    B=np.array([[0.,-2.,1.],[1.,-.5,0.]])
+    p=np.arange(1,9,dtype=float)
+    p=p/p.sum()
+    for law in (p,p.reshape(-1,1)):
+        out=orient_columns(B,law)
+        assert out["p"].shape==law.shape
+        assert out["flipped_columns"]==[0]
+        assert np.all(out["B"][:,1:].sum(axis=0)>=0)
+        from dcrl.metrics import align_latent_law
+        np.testing.assert_allclose(out["p"].reshape(-1),align_latent_law(p,[0,1],[1,0]))
+    with pytest.raises(ValueError,match="normalized"):
+        orient_columns(B,np.ones(4))
+
+def test_orientation_is_mandatory_on_fit_api():
+    X=np.random.RandomState(1).binomial(1,.5,(20,6))
+    cfg=ExperimentConfig(N=20,K=2,distribution="Bernoulli",max_iter=1)
+    with pytest.raises(ValueError,match="column_sum"):
+        fit_observed(X,cfg,orientation="none")
+
 def test_zero_columns_and_large_sparse_law():
     B=np.zeros((2,81))
     p=SparseLatentLaw(80,{0: .7,1<<79: .3})
