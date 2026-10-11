@@ -13,6 +13,7 @@ REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO/'src'))
 from dcrl.timss.graph import learn_graph, sample_latents
 from dcrl.timss.refit import fit
+from dcrl.orientation import orient_columns
 
 
 def checkpoint():
@@ -83,6 +84,8 @@ def test_vectorized_fit_likelihood_matches_direct_observed_cell_calculation():
     assert result['loglik'] == pytest.approx(direct, abs=1e-8)
     assert np.all(np.diff(result['trace'][:, 1]) >= -1e-8)
     assert np.all(result['beta'][:, 1:][q == 0] == 0)
+    assert np.all(result['beta'][:,1:].sum(axis=0)>=0)
+    assert result['orientation']['flipped_columns'] == orient_columns(result['beta'], result['p'])['flipped_columns']
 
 
 def test_default_saved_fit_cli_repeats_exactly_with_plot(tmp_path):
