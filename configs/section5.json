@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "base_plan": {
+    "profile": "revision",
+    "repetitions": 500,
+    "seed_start": 20261008,
+    "model": {
+      "N": 3000,
+      "K": 10,
+      "J": 30,
+      "DAG_type": "Markov",
+      "Q_type": "1",
+      "distribution": "Bernoulli",
+      "profile": "revision",
+      "max_iter": 20,
+      "n_jobs": 1,
+      "init_cutoff_c": 2.5,
+      "coefficient_bound_scale": 1.0,
+      "signal_scheme": "restore_minimum",
+      "signal_multiplier": 1.25,
+      "epsilon": 0.001
+    },
+    "starts": [
+      {
+        "kind": "spectral"
+      }
+    ],
+    "orientation": "column_sum",
+    "evaluation_alignment": "latent_sample",
+    "oracles": false,
+    "graph_all_starts": false,
+    "graph": {
+      "methods": [
+        "resampling"
+      ],
+      "ratios": [
+        1.0
+      ],
+      "ess": [
+        1.0
+      ],
+      "structure_prior": [
+        null
+      ],
+      "draws": 1
+    },
+    "truth_max_k": 16
+  },
+  "graphs": [
+    {
+      "label": "Chain-10",
+      "DAG_type": "Markov",
+      "K": 10
+    },
+    {
+      "label": "Tree-10",
+      "DAG_type": "Tree",
+      "K": 10
+    },
+    {
+      "label": "Model-7",
+      "DAG_type": "Model-7",
+      "K": 7
+    },
+    {
+      "label": "Model-8",
+      "DAG_type": "Model-8",
+      "K": 8
+    },
+    {
+      "label": "Model-13",
+      "DAG_type": "Model-13",
+      "K": 13
+    }
+  ],
+  "Q_types": [
+    "1",
+    "2"
+  ],
+  "distributions": [
+    {
+      "name": "Bernoulli",
+      "epsilon": 0.001
+    },
+    {
+      "name": "Poisson",
+      "epsilon": 1e-50
+    },
+    {
+      "name": "Lognormal",
+      "epsilon": 1e-05
+    }
+  ],
+  "sample_sizes": [
+    3000,
+    5000,
+    7000
+  ],
+  "seed_stride": 1000000,
+  "validation_seed_base": 910000000,
+  "validation_recipe": {
+    "inner_max_iter": 200,
+    "gain_numerator": 1.0,
+    "gain_offset": 10.0,
+    "C": 3,
+    "kappa": 0.01,
+    "tau_multiplier": 2.0
+  },
+  "overrides": [
+    {
+      "graph": "Model-7",
+      "Q_type": "1",
+      "distribution": "Poisson",
+      "rounds": 400
+    },
+    {
+      "graph": "Model-8",
+      "Q_type": "2",
+      "distribution": "Lognormal",
+      "rounds": 100
+    },
+    {
+      "graph": "Model-13",
+      "Q_type": "1",
+      "distribution": "Lognormal",
+      "rounds": 100
+    }
+  ]
+}

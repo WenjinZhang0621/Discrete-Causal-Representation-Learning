@@ -136,16 +136,22 @@ def _initial_parameters(X,cfg,spec,known_Q):
     return p,B,gamma,A
 
 
-def _make_estimator(X,cfg,initial,known_Q):
+def _make_estimator(X,cfg,initial,known_Q,backend="standard"):
     names=("N","J","K","Q_type","DAG_type","distribution","algorithm","tau","pen",
              "max_iter","tol","C","epsilon","Q_N","kappa","L_final","init_cutoff_c",
              "inner_max_iter","gain_numerator","gain_offset","min_outer_iter","coefficient_bound_scale")
     kwargs={name: getattr(cfg,name) for name in names}
     kwargs.update(asdict(cfg.bounds))
-    return DAGEstimator(**kwargs,observed_X=X,initial_parameters=initial,known_Q=known_Q)
+    cls=DAGEstimator
+    if backend=="section5_validated":
+        from .section5_backend import estimator_class
+        cls=estimator_class()
+    elif backend!="standard":
+        raise ValueError("Unknown fitting backend: "+str(backend))
+    return cls(**kwargs,observed_X=X,initial_parameters=initial,known_Q=known_Q)
 
 
-def fit_observed(X,config,start_specs=None,known_Q=None,orientation="column_sum"):
+def fit_observed(X,config,start_specs=None,known_Q=None,orientation="column_sum",backend="standard"):
     """Fit observed X and retain every attempted start, including failures.
 
     Start dictionaries accept ``kind``, ``seed`` (SAEM seed), ``init_seed``
@@ -160,9 +166,15 @@ def fit_observed(X,config,start_specs=None,known_Q=None,orientation="column_sum"
     The result is an attained finite fit, never a global-MLE certificate.
     All failed starts are returned even if no scorable candidate remains.
 
+    ``section5_validated`` selects the frozen analytic-objective/vectorized-Gibbs
+    backend used by the three Section 5 validation groups; ``standard`` retains
+    the original estimator. Backend selection is local to this call.
+
     PSAEM uses NumPy's legacy global RNG. Its state is restored on return, but
     concurrent calls in threads are unsupported; use separate processes.
     """
+    if backend not in {"standard","section5_validated"}:
+        raise ValueError("Unknown fitting backend: "+str(backend))
     cfg=deepcopy(config).finalize()
     X=_validate_X(X,cfg.distribution)
     if X.shape!=(cfg.N,cfg.J):
@@ -210,7 +222,7 @@ def fit_observed(X,config,start_specs=None,known_Q=None,orientation="column_sum"
                     p0,B0,gamma0,A0=initial
                     record.update(initial_p=SparseLatentLaw(cfg.K,dict(p0)),initial_B=B0.copy(),
                                   initial_gamma=gamma0.copy(),initial_A=A0.copy())
-                    est=_make_estimator(X,cfg,initial,known_Q)
+                    est=_make_estimator(X,cfg,initial,known_Q,backend=backend)
                     np.random.seed(spec["seed"])
                     est.PSAEM(i)
                     record.update(B=est.B_hat.copy(),p=est.p_hat,

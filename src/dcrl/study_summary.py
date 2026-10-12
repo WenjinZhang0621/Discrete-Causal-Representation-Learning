@@ -85,6 +85,8 @@ def graph_payload(graph):
     for name in ['full_shd','matched_full_shd']:
         if name in graph:
             result[name]=graph[name]
+    if 'matched_full_shd' in graph:
+        result['exact_composite']=graph['matched_full_shd']==0
     if 'elapsed_seconds' in graph.get('diagnostics',{}):
         result['elapsed_seconds']=graph['diagnostics']['elapsed_seconds']
     return result
@@ -103,6 +105,8 @@ def _graph_summary(setting,key,expected_draws,rows,records):
     counts=Counter()
     exact_names=[f'{kind}.{metric}' for kind in ['raw_latent','aligned_latent']
                    for metric in ['exact_cpdag','exact_skeleton','exact_vstructures','exact_directed_edges']]
+    if key[0].startswith('fully_estimated'):
+        exact_names.append('exact_composite')
     for row in rows:
         draws=records.get((setting,row['seed'],key),{})
         valid=[graph_payload(r) for r in draws.values() if r['status']=='ok']

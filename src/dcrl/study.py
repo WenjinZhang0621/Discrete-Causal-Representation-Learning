@@ -54,7 +54,7 @@ def source_hashes():
 
 def versions():
     result={'python':platform.python_version(),'platform':platform.platform()}
-    for name in ['numpy','scipy','factor_analyzer','causal-learn','joblib']:
+    for name in ['numpy','scipy','scikit-learn','factor_analyzer','causal-learn','joblib']:
         try:
             result[name]=importlib.metadata.version(name)
         except importlib.metadata.PackageNotFoundError:
@@ -145,6 +145,7 @@ def generate_observations(cfg,extras,seed):
 
 
 def start_specs(plan,seed):
+    seed+=int(plan.get('fit_graph_seed_offset',0))
     templates=plan.get('starts',[{'kind':'spectral'}])
     if not templates:
         raise ValueError('At least one start is required')
@@ -282,7 +283,7 @@ def graph_experiments(plan,folder,data,truth,fits,seed):
                 index+=1
                 record=dict(stage=stage,start_id=start_id,method=method,ratio=ratio,
                               effective_n=size,ess=ess,structure_prior=prior,draw=draw,
-                              seed=seed+300000+draw if method=='resampling' else None,status='failed')
+                              seed=seed+int(plan.get('fit_graph_seed_offset',0))+300000+draw if method=='resampling' else None,status='failed')
                 try:
                     if p is None:
                         raise RuntimeError('This graph stage is unavailable because its fitted latent law failed; other oracle stages are still evaluated')
@@ -374,7 +375,7 @@ def run_replicate(plan,setting_id,spec,seed,output):
         def attempt_fit(known_Q=None):
             try:
                 return fit_observed(data.X,cfg,start_specs=row['start_specs'],known_Q=known_Q,
-                                    orientation=row['orientation'])
+                                    orientation=row['orientation'],backend=plan.get('fitting_backend','standard'))
             except Exception as exc:
                 starts=[dict(id=s['id'],spec=s,status='not_attempted',fit_valid=False,
                                scorable=False,error=repr(exc),failure_stage='fit_setup') for s in row['start_specs']]
@@ -428,6 +429,8 @@ def run_study(plan,output,jobs=1,resume=False):
         raise ValueError('evaluation_alignment must be Q_support or latent_sample')
     if plan.get('orientation','column_sum')!='column_sum':
         raise ValueError('Study fits must use column_sum orientation')
+    if plan.get('fitting_backend','standard') not in {'standard','section5_validated'}:
+        raise ValueError('Unknown fitting backend')
     settings=expanded_settings(plan)
     # Validate configuration before creating output or launching workers.
     for _,spec in settings:

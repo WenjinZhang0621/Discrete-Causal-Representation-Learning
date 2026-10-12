@@ -28,12 +28,76 @@ for seesaw graph PNGs. The Conda environment above supplies Graphviz.
 
 ## Run
 
-Use the original entry points for legacy behavior, or a JSON study plan for
-the revision experiments.
+To reproduce the Section 5 simulation table with the supplied settings:
+
+```bash
+python experiments/run_section5.py
+```
+
+This runs 90 settings (5 graphs, 2 Q matrices, 3 distributions and 3 sample
+sizes), with 500 independent datasets per setting. Results are saved under
+`results/section5`. Use the pinned environment above for reproduction.
+
+### Section 5 settings
+
+`configs/section5.json` contains the default experiment plan. The original
+configuration is retained for 27 of the 30 graph/Q/distribution groups.
+Three groups use the parameters tested in the subsequent independent-seed
+validation:
+
+| Graph | Q | Distribution | Outer iterations |
+| --- | --- | --- | --- |
+| Model-7 | 1 | Poisson | 400 |
+| Model-8 | 2 | Lognormal | 100 |
+| Model-13 | 1 | Lognormal | 100 |
+
+For these three groups, `max_iter=min_outer_iter`, `inner_max_iter=200`,
+`gain_numerator=1`, `gain_offset=10`, `C=3`, `kappa=0.01`,
+`tau_multiplier=2`, and the graph structure prior is `0.01`. They use the
+same analytic-objective/vectorized-Gibbs implementation as the validation.
+The other 27 groups retain the original estimator, stopping rule, parameters
+and seeds. These are fixed group-specific settings, not automatic tuning.
+
+All groups use column-sum orientation, latent-sample alignment for evaluation,
+and one latent-resampling graph fit with sample size N and ESS=1. Data are
+generated independently at N=3000, 5000 and 7000; smaller datasets and fitted
+estimates are not reused at larger N. The signal setting remains
+`restore_minimum` with multiplier 1.25 throughout.
+
+For parallel repetitions, a single setting, or an interrupted run:
+
+```bash
+python experiments/run_section5.py --jobs 4
+python experiments/run_section5.py --task-id 39
+python experiments/run_section5.py --resume
+```
+
+Choose an empty output directory for a new run (`--output PATH`). Resume
+requires the same plan, source and numerical environment, and retains recorded
+failures. On a cluster, run this through the scheduler. A Slurm array indexed
+0–89 can pass `$SLURM_ARRAY_TASK_ID` to `--task-id`; allocate one CPU per
+`--jobs` worker. Run the combined summary after all settings finish:
+
+```bash
+python experiments/run_section5.py --summary-only
+```
+
+`results/section5/overview.txt` shows overall SHD (`matched_full_shd`) by sample
+size and counts the decreasing/nonincreasing groups. `section5_metrics.csv`
+also includes Q, composite graph, latent CPDAG, skeleton, v-structure and
+compelled directed-edge exact recovery, latent SHD, Monte Carlo SEs and
+valid-dataset counts. Each setting retains its full `summary.json` and
+replicate outputs. Missing or failed replicates prevent a complete trend
+verdict. A decreasing sample mean is not a test of statistical significance.
+
+See [the Section 5 reproduction notes](docs/section5-reproduction.md) for seed
+formulas, the validation results and implementation details. The original
+entry points and general diagnostic plans below remain available.
 
 ## Revision options and reproducible diagnostics
 
-The default profile is `legacy`. The `revision` profile changes only the
+The general CLI/API default profile is `legacy`; the Section 5 plan selects
+`revision`. The `revision` profile changes only the
 default Bernoulli initialization clipping value from `1e-5` to `0.001`.
 The Varimax cutoff constant `2.5`, penalty, coefficient bounds, gain and
 stopping rules stay the same. This choice was tested in strong-signal settings.
@@ -192,14 +256,18 @@ log times. It is a saturated latent-law fit; attaching a graph afterward does
 not turn that likelihood into a graph-constrained likelihood or reduce its
 parameter count. Graph-constrained BIC comparisons require separate refitting.
 
-The default stays fixed for ball images and the simulation pipeline. Sparse
-initialization changes storage, not their statistical settings. The sampling
+The original ball-image and `run_parallel.py` defaults are unchanged. Sparse
+initialization changes storage, not their statistical settings. The Section 5
+reproduction settings are listed above. The sampling
 condition needed for ratios below one is explained in
 [the consistency note](docs/resampling-consistency.md).
 
 ## Output
 
-Main simulation results are written automatically to `results/`, for example `results/results_4000_Lognormal_Tree_2.txt` with columns `iter,shd_val,shd2_val,shd3_val`.
+The Section 5 entry point writes per-setting results and the combined tables
+to `results/section5/`.
+
+The legacy simulation entry point writes to `results/`, for example `results/results_4000_Lognormal_Tree_2.txt` with columns `iter,shd_val,shd2_val,shd3_val`.
 
 The seesaw script writes outputs to `results/seesaw/`, including `p_hat.npy`, `B_hat.npy`, `latent_graph_estimated.png`, `latent_graph_estimated.npy`, `summary.json`, and heatmaps under `results/seesaw/heatmaps/`.
 
@@ -234,6 +302,15 @@ resample size, seeds, input/sample hashes, and numerical package versions.
 
   * `DAGEstimator`
   * `PSAEM` and the main `estimate` method
+* `experiments/run_section5.py`
+
+  * Section 5 reproduction entry point; defaults in `configs/section5.json`
+* `src/dcrl/section5.py`
+
+  * task plans and sample-size comparison tables
+* `src/dcrl/section5_backend/`
+
+  * validated fitting implementation for the three overridden groups
 * `src/dcrl/runner.py`
 
   * `ParallelDAGEstimator`
